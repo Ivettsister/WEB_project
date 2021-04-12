@@ -14,6 +14,8 @@ keyboard2 = [['Показать на карте'], ['Найти ближайшу
 keyboard3 = [['Вернуться назад']]
 keyboard4 = [['Текущая погода'], ['Прогноз на n дней'], ['Вернуться назад']]
 keyboard5 = [['Пешком'], ['На общественном транспорте'], ['На машине']]
+keyboard6 = [['Ввести адрес центральной точки поиска']]
+keyboard7 = [['Ввести адрес']]
 
 inline_maps = InlineKeyboardMarkup([
     [InlineKeyboardButton('Карта', callback_data='map')],
@@ -28,43 +30,45 @@ def start(update, context):
     return ENTER_NAME
 
 
-def enter_name(update, user_data):
+def enter_name(update, context):
     name = update.message.text
     if name != 'Пропустить':
-        user_data['username'] = name
+        context.user_data['username'] = name
     else:
-        user_data['username'] = None
-        update.message.reply_text('В каком городе Вы находитесь?')
+        context.user_data['username'] = None
+    update.message.reply_text('Где вы сейчас находитесь?')
     return ENTER_LOCATION
 
 
-def enter_location(bot, update, user_data):
+def enter_location(update, context):
     location = update.message.text
 
     if location != 'Пропустить':
-        user_data['location'] = location
+        context.user_data['location'] = location
+        keyboard6.append([location])
+        keyboard7.append([location])
     else:
-        user_data['location'] = None
+        context.user_data['location'] = None
 
-    name = ', {}'.format(user_data['username']) if user_data['username'] is not None else ''
+    name = ', {}'.format(context.user_data['username']) if context.user_data['username'] is not None else ''
     update.message.reply_text('Добро пожаловать{}!'.format(name), reply_markup=ReplyKeyboardMarkup(keyboard2))
     return MAIN_MENU
 
 
-def main_menu(bot, update, user_data):
+def main_menu(update, context):
     text = update.message.text
 
     if text == 'Показать на карте':
         update.message.reply_text(
-            'Введите адрес места, который хотите увидеть:',
-            reply_markup=ReplyKeyboardMarkup(keyboard3)
+            'Выберите, что мне показывать:',
+            reply_markup=ReplyKeyboardMarkup(keyboard7)
         )
-        pass
+        return STATIC_PHOTO
 
     elif text == 'Найти ближайшую организацию':
         update.message.reply_text(
-            'Введите название организации, которую хотите найти (аптека/торговый центр):',
-            reply_markup=ReplyKeyboardMarkup(keyboard3)
+            'Выберите, от какой точки мне производить поиск:',
+            reply_markup=ReplyKeyboardMarkup(keyboard6)
         )
         pass
 
@@ -82,6 +86,15 @@ def main_menu(bot, update, user_data):
         )
         pass
     return MAIN_MENU
+
+
+def static_photo(update, context):
+    text = update.message.text
+    if text == 'Ввести адрес':
+        adress = update.message.text
+        print(adress)
+    else:
+        pass
 
 
 def choosing_map_type(bot, update, user_data):
@@ -128,8 +141,8 @@ def main():
 
 
 (
-    ENTER_NAME, ENTER_LOCATION, MAIN_MENU
-) = range(3)
+    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO
+) = range(4)
 
 
 conversation_handler = ConversationHandler(
@@ -138,7 +151,8 @@ conversation_handler = ConversationHandler(
     states={
         ENTER_NAME: [MessageHandler(Filters.text, enter_name, pass_user_data=True)],
         MAIN_MENU: [MessageHandler(Filters.text, main_menu, pass_user_data=True)],
-        ENTER_LOCATION: [MessageHandler(Filters.text, enter_location, pass_user_data=True)]
+        ENTER_LOCATION: [MessageHandler(Filters.text, enter_location, pass_user_data=True)],
+        STATIC_PHOTO: [MessageHandler(Filters.text, static_photo, pass_user_data=True)]
     },
 
     fallbacks=[CommandHandler('stop', stop)]
