@@ -2,9 +2,7 @@ from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters, CallbackQueryHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 import os
-from maps_api.request import geocoder_request, map_request
-from maps_api.geocoder import get_pos, get_bbox, get_country_code, get_city, check_response
-from maps_api.static import get_static_map
+from maps_api.geocoder import get_ll_span
 from weather import get_current_weather, get_forecast_weather
 
 load_dotenv()
@@ -49,7 +47,6 @@ def enter_location(update, context):
         keyboard7.append([location])
     else:
         context.user_data['location'] = None
-
     name = ', {}'.format(context.user_data['username']) if context.user_data['username'] is not None else ''
     update.message.reply_text('Добро пожаловать{}!'.format(name), reply_markup=ReplyKeyboardMarkup(keyboard2))
     return MAIN_MENU
@@ -91,10 +88,35 @@ def main_menu(update, context):
 def static_photo(update, context):
     text = update.message.text
     if text == 'Ввести адрес':
-        adress = update.message.text
-        print(adress)
+        return NEED_ADRESS
     else:
-        pass
+        if 'need_adresses' in context.user_data.keys():
+            context.user_data['need_adresses'].append(text)
+        else:
+            context.user_data['need_adresses'] = [text]
+        update.message.reply_text(
+            'Выберите тип карты снимка:',
+            reply_markup=inline_maps
+        )
+        return GET_PHOTO
+
+
+def get_photo(update, context):
+    query = update.callback_query
+    print(query)
+    context.user_data['need_maptype'] = query.data
+    ll, spn = get_ll_span(context.user_data['need_adresses'][-1])
+    static_api_request = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={context.user_data['need_maptype']}"
+    context.bot.send_photo(
+        update.message.chat_id,
+        static_api_request,
+        caption="Нашёл:"
+    )
+    return STATIC_PHOTO
+
+
+def need_adress(update, context):
+    return STATIC_PHOTO
 
 
 def choosing_map_type(bot, update, user_data):
@@ -141,8 +163,8 @@ def main():
 
 
 (
-    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO
-) = range(4)
+    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO, NEED_ADRESS, GET_PHOTO
+) = range(6)
 
 
 conversation_handler = ConversationHandler(
@@ -152,7 +174,9 @@ conversation_handler = ConversationHandler(
         ENTER_NAME: [MessageHandler(Filters.text, enter_name, pass_user_data=True)],
         MAIN_MENU: [MessageHandler(Filters.text, main_menu, pass_user_data=True)],
         ENTER_LOCATION: [MessageHandler(Filters.text, enter_location, pass_user_data=True)],
-        STATIC_PHOTO: [MessageHandler(Filters.text, static_photo, pass_user_data=True)]
+        STATIC_PHOTO: [MessageHandler(Filters.text, static_photo, pass_user_data=True)],
+        NEED_ADRESS: [MessageHandler(Filters.text, need_adress, pass_user_data=True)],
+        GET_PHOTO: [MessageHandler(Filters.text, get_photo, pass_user_data=True)]
     },
 
     fallbacks=[CommandHandler('stop', stop)]

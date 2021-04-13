@@ -1,84 +1,105 @@
-from maps_api.request import geocoder_request
+import requests
+
+API_KEY = '40d1649f-0493-4b70-98ba-98533de7710b'
 
 
-def get_components(data):
-    try:
-        for i in ['response', 'GeoObjectCollection', 'featureMember',
-                  0, 'GeoObject', 'metaDataProperty', 'GeocoderMetaData',
-                  'Address', 'Components']:
-            data = data[i]
-        return data
-    except (IndexError, KeyError):
+def geocode(address):
+    # Собираем запрос для геокодера.
+    geocoder_request = f"http://geocode-maps.yandex.ru/1.x/"
+    geocoder_params = {
+        "apikey": API_KEY,
+        "geocode": address,
+        "format": "json"}
+
+    # Выполняем запрос.
+    response = requests.get(geocoder_request, params=geocoder_params)
+    if response:
+        # Преобразуем ответ в json-объект
+        json_response = response.json()
+    else:
+        raise RuntimeError(
+            f"""Ошибка выполнения запроса:
+            {geocoder_request}
+            Http статус: {response.status_code} ({response.reason})""")
+
+    # Получаем первый топоним из ответа геокодера.
+    # Согласно описанию ответа он находится по следующему пути:
+    features = json_response["response"]["GeoObjectCollection"]["featureMember"]
+    if features:
+        return features[0]["GeoObject"]
+    else:
         return None
 
 
-def get_city(data, lang='en_US'):
-    address = get_address(data)
+# Получаем координаты объекта по его адресу.
+def get_coordinates(address):
+    toponym = geocode(address)
+    if not toponym:
+        return None, None
 
-    data = geocoder_request(geocode=address, lang=lang, format='json')
-    components = get_components(data)
-    if components is not None:
-        for component in components[::-1]:
-            if component['kind'] in ('province', 'locality'):
-                return component['name']
-
-    return None
+    # Координаты центра топонима:
+    toponym_coodrinates = toponym["Point"]["pos"]
+    # Широта, преобразованная в плавающее число:
+    toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+    return float(toponym_longitude), float(toponym_lattitude)
 
 
-def get_country_code(data):
-    try:
-        for i in ['response', 'GeoObjectCollection', 'featureMember',
-                  0, 'GeoObject', 'metaDataProperty', 'GeocoderMetaData',
-                  'Address', 'country_code']:
-            data = data[i]
-        return data
-    except (IndexError, KeyError):
-        print('aue')
+# Получаем параметры объекта для рисования карты вокруг него.
+def get_ll_span(address):
+    toponym = geocode(address)
+    if not toponym:
+        return None, None
+
+    # Координаты центра топонима:
+    toponym_coodrinates = toponym["Point"]["pos"]
+    # Долгота и Широта :
+    toponym_longitude, toponym_lattitude = toponym_coodrinates.split(" ")
+
+    # Собираем координаты в параметр ll
+    ll = ",".join([toponym_longitude, toponym_lattitude])
+
+    # Рамка вокруг объекта:
+    envelope = toponym["boundedBy"]["Envelope"]
+
+    # левая, нижняя, правая и верхняя границы из координат углов:
+    l, b = envelope["lowerCorner"].split(" ")
+    r, t = envelope["upperCorner"].split(" ")
+
+    # Вычисляем полуразмеры по вертикали и горизонтали
+    dx = abs(float(l) - float(r)) / 2.0
+    dy = abs(float(t) - float(b)) / 2.0
+
+    # Собираем размеры в параметр span
+    span = f"{dx},{dy}"
+
+    return ll, span
+
+
+# Находим ближайшие к заданной точке объекты заданного типа.
+# kind - тип объекта
+def get_nearest_object(point, kind):
+    ll = f"{point[0]},{point[1]}"
+    geocoder_request = f"http://geocode-maps.yandex.ru/1.x/"
+    geocoder_params = {
+        "apikey": API_KEY,
+        "geocode": ll,
+        "format": "json"}
+    if kind:
+        geocoder_params['kind'] = kind
+    # Выполняем запрос к геокодеру, анализируем ответ.
+    response = requests.get(geocoder_request, params=geocoder_params)
+    if not response:
+        raise RuntimeError(
+            f"""Ошибка выполнения запроса:
+            {geocoder_request}
+            Http статус: {response.status_code,} ({response.reason})""")
+
+    # Преобразуем ответ в json-объект
+    json_response = response.json()
+
+    # Получаем первый топоним из ответа геокодера.
+    features = json_response["response"]["GeoObjectCollection"]["featureMember"]
+    if features:
+        return features[0]["GeoObject"]["name"]
+    else:
         return None
-
-
-def get_address(data):
-    try:
-        for i in ['response', 'GeoObjectCollection', 'featureMember', 0,
-                  'GeoObject', 'metaDataProperty', 'GeocoderMetaData', 'text']:
-            data = data[i]
-        return data
-    except (IndexError, KeyError):
-        return None
-
-
-def get_pos(data):
-    pos = data
-    for i in ['response', 'GeoObjectCollection', 'featureMember',
-              0, 'GeoObject', 'Point', 'pos']:
-        pos = pos[i]
-    return list(map(float, pos.split()))
-
-
-def get_bbox(data):
-    envelope = data
-    for i in ['response', 'GeoObjectCollection', 'featureMember',
-              0, 'GeoObject', 'boundedBy', 'Envelope']:
-        envelope = envelope[i]
-    points = list(map(float, envelope['lowerCorner'].split())) + list(map(float, envelope['upperCorner'].split()))
-    for i in range(len(points)):
-        if i % 2 == 1:
-            if points[i] > 90:
-                points[i] = 90
-            elif points[i] < -90:
-                points[i] = -90
-        else:
-            if points[i] > 180:
-                points[i] = 180
-            elif points[i] < -180:
-                points[i] = -180
-    return points
-
-
-def check_response(data):
-    found = data
-    for i in ['response', 'GeoObjectCollection', 'metaDataProperty', 'GeocoderResponseMetaData',
-              'found']:
-        found = found[i]
-    print(found)
-    return int(found)
