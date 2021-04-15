@@ -107,25 +107,23 @@ def static_photo(update, context):
             context.user_data['need_adresses'] = [text]
     update.message.reply_text(
         'Выберите тип карты снимка:',
-        parse_mode='markdown',
         reply_markup=inline_maps
     )
-    return GET_PHOTO_HANDLER
+    return STATIC_PHOTO
 
 
 def get_photo_handler(update, context):
     query = update.callback_query
-    print(query.data)
-    print('here1')
     context.user_data['need_maptype'] = query.data
     ll, spn = get_ll_span(context.user_data['need_adresses'][-1])
-    static_api_request = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l=map"
-    context.bot.send_photo(
-        update.message.chat_id,
-        static_api_request,
-        caption="Нашёл:"
+    static_api_request = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={context.user_data['need_maptype']}"
+    context.bot.edit_message_text(
+        chat_id=query.message.chat_id,
+        message_id=query.message.message_id,
+        text="[​​​​​​​​​​​]{}".format(static_api_request, 'Нашёл:'),
+        parse_mode='markdown',
+        reply_markup=inline_maps
     )
-    return STATIC_PHOTO
 
 
 def need_adress(update, context):
@@ -176,8 +174,8 @@ def main():
 
 
 (
-    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO, NEED_ADRESS, GET_PHOTO_HANDLER
-) = range(6)
+    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO, NEED_ADRESS
+) = range(5)
 
 
 conversation_handler = ConversationHandler(
@@ -187,9 +185,8 @@ conversation_handler = ConversationHandler(
         ENTER_NAME: [MessageHandler(Filters.text, enter_name, pass_user_data=True)],
         MAIN_MENU: [MessageHandler(Filters.text, main_menu, pass_user_data=True)],
         ENTER_LOCATION: [MessageHandler(Filters.text, enter_location, pass_user_data=True)],
-        STATIC_PHOTO: [MessageHandler(Filters.text, static_photo, pass_user_data=True)],
-        GET_PHOTO_HANDLER: [MessageHandler(Filters.text, get_photo_handler, pass_user_data=True),
-            CallbackQueryHandler(choose_map_type, pass_user_data=True)],
+        STATIC_PHOTO: [MessageHandler(Filters.text, static_photo, pass_user_data=True),
+                       CallbackQueryHandler(get_photo_handler, pass_user_data=True)],
         NEED_ADRESS: [MessageHandler(Filters.text, need_adress, pass_user_data=True)]
     },
 
