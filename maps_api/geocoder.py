@@ -3,6 +3,18 @@ import requests
 API_KEY = '40d1649f-0493-4b70-98ba-98533de7710b'
 
 
+def geocoder_request(**kwargs):
+    response = requests.get('http://geocode-maps.yandex.ru/1.x/', params=kwargs)
+
+    if not response:
+        raise RuntimeError(
+            'Ошибка выполнения запроса:'
+            'Http статус: {} ({})'.format(response.status_code, response.reason)
+        )
+
+    return response.json()
+
+
 def geocode(address):
     # Собираем запрос для геокодера.
     geocoder_request = f"http://geocode-maps.yandex.ru/1.x/"
@@ -102,4 +114,50 @@ def get_nearest_object(point, kind):
     if features:
         return features[0]["GeoObject"]["name"]
     else:
+        return None
+
+
+def get_components(data):
+    try:
+        for i in ['response', 'GeoObjectCollection', 'featureMember',
+                  0, 'GeoObject', 'metaDataProperty', 'GeocoderMetaData',
+                  'Address', 'Components']:
+            data = data[i]
+        return data
+    except (IndexError, KeyError):
+        return None
+
+
+def get_city(data, lang='en_US'):
+    address = get_address(data)
+
+    data = geocoder_request(geocode=address, lang=lang, format='json')
+    components = get_components(data)
+    if components is not None:
+        for component in components[::-1]:
+            if component['kind'] in ('province', 'locality'):
+                return component['name']
+
+    return None
+
+
+def get_country_code(data):
+    try:
+        for i in ['response', 'GeoObjectCollection', 'featureMember',
+                  0, 'GeoObject', 'metaDataProperty', 'GeocoderMetaData',
+                  'Address', 'country_code']:
+            data = data[i]
+        return data
+    except (IndexError, KeyError):
+        print('Oh, fail!')
+        return None
+
+
+def get_address(data):
+    try:
+        for i in ['response', 'GeoObjectCollection', 'featureMember', 0,
+                  'GeoObject', 'metaDataProperty', 'GeocoderMetaData', 'text']:
+            data = data[i]
+        return data
+    except (IndexError, KeyError):
         return None

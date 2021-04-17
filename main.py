@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters, CallbackQueryHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 import os
-from maps_api.geocoder import get_ll_span
+from maps_api.geocoder import get_ll_span, get_city, get_country_code
 from weather import get_current_weather, get_forecast_weather
 
 
@@ -24,7 +24,7 @@ keyboard3 = [['Вернуться назад']]
 keyboard4 = [['Текущая погода'], ['Прогноз на n дней'], ['Вернуться назад']]
 keyboard5 = [['Пешком'], ['На общественном транспорте'], ['На машине']]
 keyboard6 = [['Ввести адрес центральной точки поиска']]
-keyboard7 = [['Ввести адрес']]
+keyboard7 = [['Вернуться назад'], ['Ввести адрес']]
 
 inline_maps = InlineKeyboardMarkup([
     [InlineKeyboardButton('Карта', callback_data='map')],
@@ -99,7 +99,10 @@ def main_menu(update, context):
 def static_photo(update, context):
     text = update.message.text
     if text == 'Ввести адрес':
-        return NEED_ADRESS
+        text = need_adress(update, context)
+    elif text == 'Вернуться назад':
+        update.message.reply_text('Возвращаю вас в главное меню!', reply_markup=ReplyKeyboardMarkup(keyboard2))
+        return MAIN_MENU
     else:
         if 'need_adresses' in context.user_data.keys():
             context.user_data['need_adresses'].append(text)
@@ -127,36 +130,21 @@ def get_photo_handler(update, context):
 
 
 def need_adress(update, context):
-    return STATIC_PHOTO
-
-
-def choose_map_type(bot, update, user_data):
-    query = update.callback_query
-    bot.edit_message_text(chat_id=query.message.chat_id, message_id=query.message.message_id,
-                          text="[​​​​​​​​​​​]({}){}".format(get_static_map(user_data, query.data),
-                                                            'Карта для города ' + get_city(
-                                                                user_data['current_response'], 'ru-RU')),
-                          parse_mode='markdown', reply_markup=inline_maps)
+    return static_photo(update, context)
 
 
 def weather(bot, update, user_data):
     text = update.message.text
-
     if text == 'Текущая погода':
-        city, code = get_city(user_data['current_response']), get_country_code(user_data['current_response'])
+        city, code = get_city(user_data['need_adresses']), get_country_code(user_data['need_adresses'])
         update.message.reply_text(
-            get_current_weather(city, code, WEATHER_TOKEN, get_city(user_data['current_response'], 'ru-RU')))
-
-    elif text == 'Прогноз на n дней':
-        city, code = get_city(user_data['current_response']), get_country_code(user_data['current_response'])
+            get_current_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(user_data['current_response'], 'ru-RU')))
+    elif text == 'Прогноз на 6 дней':
+        city, code = get_city(user_data['need_adresses']), get_country_code(user_data['need_adresses'])
         update.message.reply_text(
-            get_forecast_weather(city, code, WEATHER_TOKEN, get_city(user_data['current_response'], 'ru-RU')))
-
+            get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(user_data['need_adresses'], 'ru-RU')))
     elif text == 'Вернуться назад':
-        update.message.reply_text('Выберите одну из возможных функций для данного местоположения:',
-                                  reply_markup=ReplyKeyboardMarkup(keyboard2))
-
-        pass
+        return MAIN_MENU
 
 
 def stop(bot, update):
@@ -166,7 +154,7 @@ def stop(bot, update):
 
 
 def main():
-    updater = Updater(os.getenv("TOKEN"), use_context=True)
+    updater = Updater(os.getenv("TELEGRAMM_TOKEN"), use_context=True)
     dp = updater.dispatcher
     dp.add_handler(conversation_handler)
     updater.start_polling()
