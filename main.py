@@ -85,7 +85,7 @@ def main_menu(update, context):
             'Выберите параметры, которые Вы хотите настроить',
             reply_markup=ReplyKeyboardMarkup(keyboard4)
         )
-        pass
+        return WEATHER_HANDLER
 
     elif text == 'Посчитать время на дорогу':
         update.message.reply_text(
@@ -101,7 +101,7 @@ def static_photo(update, context):
     if text == 'Ввести адрес':
         text = need_adress(update, context)
     elif text == 'Вернуться назад':
-        update.message.reply_text('Возвращаю вас в главное меню!', reply_markup=ReplyKeyboardMarkup(keyboard2))
+        update.message.reply_text('Возвращаю вас в главное меню...)', reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
     else:
         if 'need_adresses' in context.user_data.keys():
@@ -133,17 +133,18 @@ def need_adress(update, context):
     return static_photo(update, context)
 
 
-def weather(bot, update, user_data):
+def weather(update, context):
     text = update.message.text
     if text == 'Текущая погода':
-        city, code = get_city(user_data['need_adresses']), get_country_code(user_data['need_adresses'])
+        city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
-            get_current_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(user_data['current_response'], 'ru-RU')))
-    elif text == 'Прогноз на 6 дней':
-        city, code = get_city(user_data['need_adresses']), get_country_code(user_data['need_adresses'])
+            get_current_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
+    elif text == 'Прогноз на n дней':
+        city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
-            get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(user_data['need_adresses'], 'ru-RU')))
+            get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
     elif text == 'Вернуться назад':
+        update.message.reply_text('Возвращаю вас в главное меню...)', reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
 
 
@@ -162,8 +163,8 @@ def main():
 
 
 (
-    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO, NEED_ADRESS
-) = range(5)
+    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO, NEED_ADRESS, WEATHER_HANDLER
+) = range(6)
 
 
 conversation_handler = ConversationHandler(
@@ -175,7 +176,8 @@ conversation_handler = ConversationHandler(
         ENTER_LOCATION: [MessageHandler(Filters.text, enter_location, pass_user_data=True)],
         STATIC_PHOTO: [MessageHandler(Filters.text, static_photo, pass_user_data=True),
                        CallbackQueryHandler(get_photo_handler, pass_user_data=True)],
-        NEED_ADRESS: [MessageHandler(Filters.text, need_adress, pass_user_data=True)]
+        NEED_ADRESS: [MessageHandler(Filters.text, need_adress, pass_user_data=True)],
+        WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)]
     },
 
     fallbacks=[CommandHandler('stop', stop)]

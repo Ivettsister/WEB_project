@@ -3,7 +3,7 @@ import requests
 
 def get_city_id(city, countrycode, token):
     locality = ','.join([city, countrycode])
-
+    print(locality)
     try:
         res = requests.get("http://api.openweathermap.org/data/2.5/find",
                            params={'q': locality, 'type': 'like', 'units': 'metric', 'APPID': token})
