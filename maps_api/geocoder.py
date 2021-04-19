@@ -131,7 +131,7 @@ def get_components(data):
 def get_city(data, lang='en_US'):
     address = get_address(data)
 
-    data = geocoder_request(geocode=address, lang=lang, format='json')
+    data = geocoder_request(geocode=address, apikey=API_KEY, lang=lang, format='json')
     components = get_components(data)
     if components is not None:
         for component in components[::-1]:
@@ -142,11 +142,13 @@ def get_city(data, lang='en_US'):
 
 
 def get_country_code(data):
+    data = geocoder_request(geocode=data, apikey=API_KEY, format='json')
     try:
-        for i in ['response', 'GeoObjectCollection', 'featureMember',
-                  0, 'GeoObject', 'metaDataProperty', 'GeocoderMetaData',
-                  'Address', 'country_code']:
-            data = data[i]
+        spic = ['response', 'GeoObjectCollection', 'featureMember',
+                0, 'GeoObject', 'metaDataProperty', 'GeocoderMetaData',
+                'Address', 'country_code']
+        for i in range(len(spic)):
+            data = data[spic[i]]
         return data
     except (IndexError, KeyError):
         print('Oh, fail!')
@@ -154,10 +156,13 @@ def get_country_code(data):
 
 
 def get_address(data):
+    data = geocoder_request(geocode=data, apikey=API_KEY, format='json')
     try:
-        for i in ['response', 'GeoObjectCollection', 'featureMember', 0,
-                  'GeoObject', 'metaDataProperty', 'GeocoderMetaData', 'text']:
-            data = data[i]
+        spic = ['response', 'GeoObjectCollection', 'featureMember', 0,
+                'GeoObject', 'metaDataProperty', 'GeocoderMetaData', 'text']
+        for i in range(len(spic)):
+            data = data[spic[i]]
         return data
     except (IndexError, KeyError):
+        print('here')
         return None

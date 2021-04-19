@@ -93,6 +93,9 @@ def main_menu(update, context):
             reply_markup=ReplyKeyboardMarkup(keyboard5)
         )
         pass
+    elif text == 'Вернуться назад':
+        update.message.reply_text('Где вы сейчас находитесь?')
+        return ENTER_LOCATION
     return MAIN_MENU
 
 
@@ -138,11 +141,11 @@ def weather(update, context):
     if text == 'Текущая погода':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
-            get_current_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
+            get_current_weather(city, code, os.getenv("WEATHER_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
     elif text == 'Прогноз на n дней':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
-            get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
+            get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
     elif text == 'Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...)', reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
