@@ -20,7 +20,6 @@ def get_current_weather(city, countrycode, token, runame):
     try:
         res = requests.get("http://api.openweathermap.org/data/2.5/weather",
                            params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': token})
-        print('here1')
         data = res.json()
         print(data)
         return 'Текущая погода в городе {}:\n\n-{} {}\n-Температура воздуха: {}°С\n-Влажность воздуха: {}%\n-Скорость ' \
@@ -36,7 +35,7 @@ def get_forecast_weather(city, countrycode, token, runame):
     city_id = get_city_id(city, countrycode, token)
     try:
         res = requests.get("http://api.openweathermap.org/data/2.5/forecast?",
-                           params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': token})
+                           params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': token, 'cnt': 7})
         data = res.json()
         temps = {}
         weather = {}
