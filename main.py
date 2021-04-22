@@ -21,7 +21,7 @@ keyboard1 = [['Пропустить']]
 keyboard2 = [['Показать на карте'], ['Найти ближайшую организацию'], ['Посчитать время на дорогу'], ['Погода'], ['Расписания'],
              ['Вернуться назад']]
 keyboard3 = [['Вернуться назад']]
-keyboard4 = [['Текущая погода'], ['Прогноз на 7 дней'], ['Вернуться назад']]
+keyboard4 = [['Текущая погода'], ['Прогноз на 6 дней'], ['Вернуться назад']]
 keyboard5 = [['Пешком'], ['На общественном транспорте'], ['На машине']]
 keyboard6 = [['Ввести адрес центральной точки поиска']]
 keyboard7 = [['Вернуться назад'], ['Ввести адрес']]
@@ -136,28 +136,13 @@ def need_adress(update, context):
     return static_photo(update, context)
 
 
-"""def get_days(update, context):
-    text = update.message.text
-    while text == 'Прогноз на n дней':
-    days = int(text)
-    while not 1 <= days <= 16:
-        update.message.reply_text('Введено некорректное число дней!')
-        update.message.reply_text('Пожалуйста, повторите ввод!')
-        return get_days
-    city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
-    update.message.reply_text(
-        get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN"), get_city(context.user_data['location'], 'ru-RU'),
-                             days))
-    return days"""
-
-
 def weather(update, context):
     text = update.message.text
     if text == 'Текущая погода':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
             get_current_weather(city, code, os.getenv("WEATHER_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
-    elif text == 'Прогноз на 7 дней':
+    elif text == 'Прогноз на 6 дней':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
             get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN"),

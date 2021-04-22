@@ -35,7 +35,7 @@ def get_forecast_weather(city, countrycode, token, runame):
     city_id = get_city_id(city, countrycode, token)
     try:
         res = requests.get("http://api.openweathermap.org/data/2.5/forecast?",
-                           params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': token, 'cnt': 7})
+                           params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': token})
         data = res.json()
         temps = {}
         weather = {}
