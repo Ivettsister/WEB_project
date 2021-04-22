@@ -33,7 +33,7 @@ inline_maps = InlineKeyboardMarkup([
 ])
 
 
-def start(update, context):
+def start(update):
     update.message.reply_text(
         'Как Вас зовут?', reply_markup=ReplyKeyboardMarkup(keyboard1, one_time_keyboard=False))
     return ENTER_NAME
@@ -63,9 +63,8 @@ def enter_location(update, context):
     return MAIN_MENU
 
 
-def main_menu(update, context):
+def main_menu(update):
     text = update.message.text
-
     if text == 'Показать на карте':
         update.message.reply_text(
             'Выберите, что мне показывать:',
@@ -93,6 +92,7 @@ def main_menu(update, context):
             reply_markup=ReplyKeyboardMarkup(keyboard5)
         )
         pass
+
     elif text == 'Вернуться назад':
         update.message.reply_text('Где вы сейчас находитесь?')
         return ENTER_LOCATION
@@ -152,7 +152,7 @@ def weather(update, context):
         return MAIN_MENU
 
 
-def stop(bot, update):
+def stop(update):
     update.message.reply_text('Пока!', reply_markup=ReplyKeyboardRemove())
     update.message.reply_text('Для того, чтобы начать работу с ботом заново напишите /start')
     return ConversationHandler.END
@@ -183,7 +183,6 @@ conversation_handler = ConversationHandler(
         NEED_ADRESS: [MessageHandler(Filters.text, need_adress, pass_user_data=True)],
         WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)]
     },
-
     fallbacks=[CommandHandler('stop', stop)]
 )
 
