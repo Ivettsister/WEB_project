@@ -4,7 +4,8 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMar
 import os
 from maps_api.geocoder import get_ll_span, get_city, get_country_code
 from weather import get_current_weather, get_forecast_weather
-
+from Keyboard import keyboard1, keyboard2, keyboard3, keyboard4, keyboard5, keyboard6, keyboard7,\
+    inline_maps, reply_keyboard
 
 import logging
 
@@ -15,27 +16,30 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+load_dotenv(dotenv_path)
 
-load_dotenv()
-keyboard1 = [['Пропустить']]
-keyboard2 = [['Показать на карте'], ['Найти ближайшую организацию'], ['Посчитать время на дорогу'], ['Погода'], ['Расписания'],
-             ['Вернуться назад']]
-keyboard3 = [['Вернуться назад']]
-keyboard4 = [['Текущая погода'], ['Прогноз на 6 дней'], ['Вернуться назад']]
-keyboard5 = [['Пешком'], ['На общественном транспорте'], ['На машине']]
-keyboard6 = [['Ввести адрес центральной точки поиска']]
-keyboard7 = [['Вернуться назад'], ['Ввести адрес']]
+info_about_bot = 'Этот бот, создан для помощи в ориентировании на местности.\nон может'+\
+                 ' предоставить карту по адресу запрошенного места, посчитать время на'+\
+                 ' дорогу до этого места (если вы предоставите свою геолокацию) и показать'+\
+                 ' прогноз погоды.'
 
-inline_maps = InlineKeyboardMarkup([
-    [InlineKeyboardButton('Карта', callback_data='map')],
-    [InlineKeyboardButton('Спутник', callback_data='sat')],
-    [InlineKeyboardButton('Гибрид', callback_data='sat,skl')],
-])
+def location(update, context):
+    return update.message.location
 
 
-def start(update):
+def help(update): # пока что не работает вроде, в прочем как и /stop
+    update.message.reply_text(info_about_bot)
+
+
+def start(update, context):
     update.message.reply_text(
-        'Как Вас зовут?', reply_markup=ReplyKeyboardMarkup(keyboard1, one_time_keyboard=False))
+        'Вас приветсвует бот, созданный для помощи в ориентировании на местности.\n' +
+        'Я могу предоставить карту по адресу запрошенного места, посчитать время на дорогу до этого' +
+        ' места (если вы предоставите свою геолокацию) и предоставить прогноз погоды.',
+        reply_markup=ReplyKeyboardMarkup(keyboard1,
+                                         one_time_keyboard=True,
+                                         resize_keyboard=True))
     return ENTER_NAME
 
 
@@ -45,21 +49,25 @@ def enter_name(update, context):
         context.user_data['username'] = name
     else:
         context.user_data['username'] = None
-    update.message.reply_text('Где вы сейчас находитесь?')
+    update.message.reply_text('Где вы сейчас находитесь?', reply_markup=reply_keyboard)
+
     return ENTER_LOCATION
 
 
 def enter_location(update, context):
-    location = update.message.text
-
-    if location != 'Пропустить':
-        context.user_data['location'] = location
-        keyboard6.append([location])
-        keyboard7.append([location])
+    answer = update.message.text
+    if answer == 'Предоставить Геолокацию':
+        loc = location(update, context)
+        context.user_data['location'] = loc
+    elif answer != 'Пропустить':
+        context.user_data['location'] = answer
+        # keyboard6.append([answer]) в keyboard7 заменено на кнопку "Мое местоположение"
     else:
         context.user_data['location'] = None
-    name = ', {}'.format(context.user_data['username']) if context.user_data['username'] is not None else ''
-    update.message.reply_text('Добро пожаловать{}!'.format(name), reply_markup=ReplyKeyboardMarkup(keyboard2))
+    name = ', {}'.format(context.user_data['username']) if context.user_data[
+                                                               'username'] is not None else ''
+    update.message.reply_text('Добро пожаловать{}!'.format(name),
+                              reply_markup=ReplyKeyboardMarkup(keyboard2))
     return MAIN_MENU
 
 
@@ -67,9 +75,10 @@ def main_menu(update):
     text = update.message.text
     if text == 'Показать на карте':
         update.message.reply_text(
-            'Выберите, что мне показывать:',
-            reply_markup=ReplyKeyboardMarkup(keyboard7)
-        )
+            'Выберите или введите, что мне показывать (при выборе своего местоположения'+
+            ' обратите внимание, что используется, тот адрес который вы указывали ранее,'+
+            ' в случае необходимости обновите свое местоположение в главном меню)',
+            reply_markup=ReplyKeyboardMarkup(keyboard7, resize_keyboard=True))
         return STATIC_PHOTO
 
     elif text == 'Найти ближайшую организацию':
@@ -94,28 +103,30 @@ def main_menu(update):
         pass
 
     elif text == 'Вернуться назад':
-        update.message.reply_text('Где вы сейчас находитесь?')
+        update.message.reply_text('Где вы сейчас находитесь?', reply_markup=reply_keyboard)
         return ENTER_LOCATION
     return MAIN_MENU
 
 
 def static_photo(update, context):
     text = update.message.text
-    if text == 'Ввести адрес':
-        text = need_adress(update, context)
-    elif text == 'Вернуться назад':
-        update.message.reply_text('Возвращаю вас в главное меню...)', reply_markup=ReplyKeyboardMarkup(keyboard2))
+    if text == 'Мое расположение':
+        if context.user_data['location'] is not None:
+            text = context.user_data['location']
+        else:
+            update.message.reply_text('Вы не предоставляли собственного местоположения.')
+            text = 'Вернуться назад'
+    if text == 'Вернуться назад':
+        update.message.reply_text('Возвращаю вас в главное меню...',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
     else:
         if 'need_adresses' in context.user_data.keys():
             context.user_data['need_adresses'].append(text)
         else:
             context.user_data['need_adresses'] = [text]
-    update.message.reply_text(
-        'Выберите тип карты снимка:',
-        reply_markup=inline_maps
-    )
-    return STATIC_PHOTO
+        update.message.reply_text('Выберите тип карты снимка:', reply_markup=inline_maps)
+    # return STATIC_PHOTO
 
 
 def get_photo_handler(update, context):
