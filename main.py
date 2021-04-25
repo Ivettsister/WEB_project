@@ -1,12 +1,12 @@
 from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters, CallbackQueryHandler
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 import os
-from maps_api.geocoder import get_ll_span, get_city, get_country_code
+from maps_api.geocoder import get_ll_span, get_city, get_country_code, get_coordinates
 from weather import get_current_weather, get_forecast_weather
-from Keyboard import keyboard1, keyboard2, keyboard3, keyboard4, keyboard5, keyboard6, keyboard7,\
-    inline_maps, reply_keyboard
-
+from Keyboard import keyboard1, keyboard2, keyboard4, keyboard5, keyboard6, keyboard7,\
+    inline_maps, reply_keyboard, keyboard_back, keyboard_number_of_companies, keyboard_get_result
+from organizations import ask_for_orgs
 import logging
 
 logging.basicConfig(
@@ -36,7 +36,8 @@ def start(update, context):
     update.message.reply_text(
         'Вас приветсвует бот, созданный для помощи в ориентировании на местности.\n' +
         'Я могу предоставить карту по адресу запрошенного места, посчитать время на дорогу до этого' +
-        ' места (если вы предоставите свою геолокацию) и предоставить прогноз погоды.',
+        ' места (если вы предоставите свою геолокацию) и предоставить прогноз погоды.\n'
+        'Введите свое имя',
         reply_markup=ReplyKeyboardMarkup(keyboard1,
                                          one_time_keyboard=True,
                                          resize_keyboard=True))
@@ -71,7 +72,7 @@ def enter_location(update, context):
     return MAIN_MENU
 
 
-def main_menu(update):
+def main_menu(update, context):
     text = update.message.text
     if text == 'Показать на карте':
         update.message.reply_text(
@@ -83,10 +84,9 @@ def main_menu(update):
 
     elif text == 'Найти ближайшую организацию':
         update.message.reply_text(
-            'Выберите, от какой точки мне производить поиск:',
-            reply_markup=ReplyKeyboardMarkup(keyboard6)
-        )
-        pass
+            'Выберите центр поиска(обязательно):',
+            reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True))
+        return GET_LL_ORGANIZATION
 
     elif text == 'Погода':
         update.message.reply_text(
@@ -105,6 +105,82 @@ def main_menu(update):
     elif text == 'Вернуться назад':
         update.message.reply_text('Где вы сейчас находитесь?', reply_markup=reply_keyboard)
         return ENTER_LOCATION
+    return MAIN_MENU
+
+
+def get_ll_organization(update, context):
+    text = update.message.text
+    if text == 'Мое расположение':
+        if context.user_data['location'] is not None:
+            text = context.user_data['location']
+        else:
+            update.message.reply_text('Вы не предоставляли собственного местоположения.')
+            text = 'Вернуться назад'
+    if text == 'Вернуться назад':
+        update.message.reply_text('Возвращаю вас в главное меню...',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard2))
+        return MAIN_MENU
+    else:
+        context.user_data['ll_organization'] = get_coordinates(text)
+        update.message.reply_text('Введите информацию об организации: телефон, название, '
+                                  'тип организации(например кинотеатр, музей и т.д.) адрес и др.\n'
+                                  'Обратите внимание, что если вы хотите изменить центральную точку'
+                                  ' поиска, то это можно сделать нажав кнопку "Вернуться назад"',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
+        return GET_INFO_ABOUT_COMPANY
+
+
+def get_info_about_company(update, context):
+    text = update.message.text
+    if text == 'Вернуться назад':
+        update.message.reply_text('Возвращаю вас к выбору центральной точки поиска организации',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True))
+        return GET_LL_ORGANIZATION
+    else:
+        context.user_data['text_organization'] = text
+        update.message.reply_text('Выберите до скольки найденных организаций отобразить'
+                                  '(выберите число от 1 до 50).'
+                                  'По умолчанию число: 10',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard_number_of_companies, resize_keyboard=True))
+        return GET_NUMBER_OF_COMPANIES
+
+
+def get_number_of_companies(update, context):
+    text = update.message.text
+    if text == 'Пропустить':
+        context.user_data['number'] = 10
+        update.message.reply_text('Выбрано число 10', reply_markup=ReplyKeyboardMarkup(keyboard_get_result))
+        return GET_ORGANIZATIONS
+    elif text == 'Вернуться назад':
+        update.message.reply_text('Возвращаю вас к вводу информации об организации (ВНИМАНИЕ: бот запоминает тольок последний ввод информации об организации!)',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
+        return GET_INFO_ABOUT_COMPANY
+    else:
+        try:
+            if 1 <= int(text) <= 50:
+                context.user_data['number'] = int(text)
+                update.message.reply_text(f'Выбрано число {int(text)}', reply_markup=ReplyKeyboardMarkup(keyboard_get_result))
+                return GET_ORGANIZATIONS
+            else:
+                update.message.reply_text('Введено некорректное число, введите число из диапазона от 1 до 50')
+        except:
+            update.message.reply_text('Некорректный ввод, попробуйте еще раз')
+
+
+
+def get_organizations(update, context):
+    context.user_data['ll_organization'] = str(context.user_data['ll_organization'][0]) + ', ' + \
+                                           str(context.user_data['ll_organization'][1])
+    # update.message.reply_text(context.user_data['ll_organization'])
+    # update.message.reply_text(context.user_data['text_organization'])
+    # update.message.reply_text(context.user_data['number'])
+    answer = ask_for_orgs(context.user_data['ll_organization'], context.user_data['text_organization'], context.user_data['number'])
+    if answer['size'] == 0:
+        update.message.reply_text('Ничего не найдено')
+    else:
+        for info in answer['orgs']:
+            update.message.reply_text(info)
+    update.message.reply_text('Возвращаю вас в главное меню', reply_markup=ReplyKeyboardMarkup(keyboard2, resize_keyboard=True))
     return MAIN_MENU
 
 
@@ -178,8 +254,9 @@ def main():
 
 
 (
-    ENTER_NAME, ENTER_LOCATION, MAIN_MENU, STATIC_PHOTO, NEED_ADRESS, WEATHER_HANDLER
-) = range(6)
+    ENTER_NAME, MAIN_MENU, ENTER_LOCATION, STATIC_PHOTO, NEED_ADRESS, GET_LL_ORGANIZATION,
+    GET_INFO_ABOUT_COMPANY, GET_NUMBER_OF_COMPANIES, GET_ORGANIZATIONS, WEATHER_HANDLER
+) = range(10)
 
 
 conversation_handler = ConversationHandler(
@@ -192,6 +269,10 @@ conversation_handler = ConversationHandler(
         STATIC_PHOTO: [MessageHandler(Filters.text, static_photo, pass_user_data=True),
                        CallbackQueryHandler(get_photo_handler, pass_user_data=True)],
         NEED_ADRESS: [MessageHandler(Filters.text, need_adress, pass_user_data=True)],
+        GET_LL_ORGANIZATION: [MessageHandler(Filters.text, get_ll_organization, pass_user_data=True)],
+        GET_INFO_ABOUT_COMPANY: [MessageHandler(Filters.text, get_info_about_company, pass_user_data=True)],
+        GET_NUMBER_OF_COMPANIES: [MessageHandler(Filters.text, get_number_of_companies, pass_user_data=True)],
+        GET_ORGANIZATIONS: [MessageHandler(Filters.text, get_organizations, pass_user_data=True)],
         WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)]
     },
     fallbacks=[CommandHandler('stop', stop)]
