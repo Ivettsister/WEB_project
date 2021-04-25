@@ -1,6 +1,6 @@
 import requests
 
-API_KEY = '9fc14eed-73a1-4799-9473-a1140264b26f'
+API_KEY = 'ждём...'
 
 
 def route_request(**kwargs):
@@ -14,12 +14,7 @@ def route_request(**kwargs):
 
 
 def geocode(from_adress, to_adress):
-    waypoint = f"{from_adress}|{to_adress}"
-    route_request = f"https://api.routing.yandex.net/v2/route"
-    route_params = {
-        "apikey": '9fc14eed-73a1-4799-9473-a1140264b26f',
-        "waypoints": waypoint}
-    response = requests.get(route_request, params=route_params)
+    response = requests.get(f"https://api.routing.yandex.net/v2/route?waypoints=56.856617,60.602026|56.795675,60.631176&mode=transit&apikey={API_KEY}")
     if response:
         json_response = response.json()
     else:
