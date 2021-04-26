@@ -262,7 +262,7 @@ def timetable(update, context):
                                   reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
 
 
-def stop(update):
+def stop(update, context):
     update.message.reply_text('Пока!', reply_markup=ReplyKeyboardRemove())
     update.message.reply_text('Для того, чтобы начать работу с ботом заново напишите /start')
     return ConversationHandler.END
