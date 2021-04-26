@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 API_KEY = os.getenv("ORGANIZATION_TOKEN")
 
+
 def make_organization_request(ll, text, quantity=10):
     request_organize = "https://search-maps.yandex.ru/v1/"
     organization_params = {

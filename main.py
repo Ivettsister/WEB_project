@@ -24,7 +24,8 @@ info_about_bot = 'Этот бот, создан для помощи в орие�
                  ' дорогу до этого места (если вы предоставите свою геолокацию) и показать'+\
                  ' прогноз погоды.'
 
-def location(update, context):
+
+def location(update):
     return update.message.location
 
 
@@ -32,7 +33,7 @@ def help(update): # пока что не работает вроде, в про�
     update.message.reply_text(info_about_bot)
 
 
-def start(update, context):
+def start(update):
     update.message.reply_text(
         'Вас приветсвует бот, созданный для помощи в ориентировании на местности.\n' +
         'Я могу предоставить карту по адресу запрошенного места, посчитать время на дорогу до этого' +
@@ -84,26 +85,35 @@ def main_menu(update, context):
 
     elif text == 'Найти ближайшую организацию':
         update.message.reply_text(
-            'Выберите центр поиска(обязательно):',
+            'Выберите центр поиска (обязательно):',
             reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True))
         return GET_LL_ORGANIZATION
 
     elif text == 'Погода':
         update.message.reply_text(
             'Выберите параметры, которые Вы хотите настроить',
-            reply_markup=ReplyKeyboardMarkup(keyboard4)
+            reply_markup=ReplyKeyboardMarkup(keyboard4, resize_keyboard=True)
         )
         return WEATHER_HANDLER
 
     elif text == 'Посчитать время на дорогу':
         update.message.reply_text(
             'Выберите параметры, которые Вы хотите настроить',
-            reply_markup=ReplyKeyboardMarkup(keyboard5)
+            reply_markup=ReplyKeyboardMarkup(keyboard5, resize_keyboard=True)
         )
         pass
 
+    elif text == 'Расписания':
+        update.message.reply_text(
+            'Для начала я должен найти ближайшие к вам станции...' +
+            'Выберите центр поиска (обязательно):',
+            reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True)
+        )
+        return TIMETABLE_HANDLER
+
     elif text == 'Вернуться назад':
-        update.message.reply_text('Где вы сейчас находитесь?', reply_markup=reply_keyboard)
+        update.message.reply_text('Где вы сейчас находитесь?',
+                                  reply_markup=reply_keyboard, resize_keyboard=True)
         return ENTER_LOCATION
     return MAIN_MENU
 
@@ -152,7 +162,8 @@ def get_number_of_companies(update, context):
         update.message.reply_text('Выбрано число 10', reply_markup=ReplyKeyboardMarkup(keyboard_get_result))
         return GET_ORGANIZATIONS
     elif text == 'Вернуться назад':
-        update.message.reply_text('Возвращаю вас к вводу информации об организации (ВНИМАНИЕ: бот запоминает тольок последний ввод информации об организации!)',
+        update.message.reply_text('Возвращаю вас к вводу информации об организации' +
+                                  ' (ВНИМАНИЕ: бот запоминает только последний ввод информации об организации!)',
                                   reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
         return GET_INFO_ABOUT_COMPANY
     else:
@@ -165,7 +176,6 @@ def get_number_of_companies(update, context):
                 update.message.reply_text('Введено некорректное число, введите число из диапазона от 1 до 50')
         except:
             update.message.reply_text('Некорректный ввод, попробуйте еще раз')
-
 
 
 def get_organizations(update, context):
@@ -239,6 +249,27 @@ def weather(update, context):
         return MAIN_MENU
 
 
+def timetable(update, context):
+    text = update.message.text
+    if text == 'Мое расположение':
+        if context.user_data['location'] is not None:
+            text = context.user_data['location']
+        else:
+            update.message.reply_text('Вы не предоставляли собственного местоположения.')
+            text = 'Вернуться назад'
+    if text == 'Вернуться назад':
+        update.message.reply_text('Возвращаю вас в главное меню...',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard2))
+        return MAIN_MENU
+    else:
+        context.user_data['ll_organization'] = get_coordinates(text)
+        update.message.reply_text('Введите информацию об организации: телефон, название, '
+                                  'тип организации(например кинотеатр, музей и т.д.) адрес и др.\n'
+                                  'Обратите внимание, что если вы хотите изменить центральную точку'
+                                  ' поиска, то это можно сделать нажав кнопку "Вернуться назад"',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
+
+
 def stop(update):
     update.message.reply_text('Пока!', reply_markup=ReplyKeyboardRemove())
     update.message.reply_text('Для того, чтобы начать работу с ботом заново напишите /start')
@@ -255,8 +286,9 @@ def main():
 
 (
     ENTER_NAME, MAIN_MENU, ENTER_LOCATION, STATIC_PHOTO, NEED_ADRESS, GET_LL_ORGANIZATION,
-    GET_INFO_ABOUT_COMPANY, GET_NUMBER_OF_COMPANIES, GET_ORGANIZATIONS, WEATHER_HANDLER
-) = range(10)
+    GET_INFO_ABOUT_COMPANY, GET_NUMBER_OF_COMPANIES, GET_ORGANIZATIONS, WEATHER_HANDLER,
+    TIMETABLE_HANDLER
+) = range(11)
 
 
 conversation_handler = ConversationHandler(
@@ -273,7 +305,8 @@ conversation_handler = ConversationHandler(
         GET_INFO_ABOUT_COMPANY: [MessageHandler(Filters.text, get_info_about_company, pass_user_data=True)],
         GET_NUMBER_OF_COMPANIES: [MessageHandler(Filters.text, get_number_of_companies, pass_user_data=True)],
         GET_ORGANIZATIONS: [MessageHandler(Filters.text, get_organizations, pass_user_data=True)],
-        WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)]
+        WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)],
+        TIMETABLE_HANDLER: [MessageHandler(Filters.text, timetable, pass_user_data=True)]
     },
     fallbacks=[CommandHandler('stop', stop)]
 )
