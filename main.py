@@ -29,10 +29,6 @@ def location(update):
     return update.message.location
 
 
-def help(update): # пока что не работает вроде, в прочем как и /stop
-    update.message.reply_text(info_about_bot)
-
-
 def start(update):
     update.message.reply_text(
         'Вас приветсвует бот, созданный для помощи в ориентировании на местности.\n' +
@@ -58,12 +54,8 @@ def enter_name(update, context):
 
 def enter_location(update, context):
     answer = update.message.text
-    if answer == 'Предоставить Геолокацию':
-        loc = location(update, context)
-        context.user_data['location'] = loc
-    elif answer != 'Пропустить':
+    if answer != 'Пропустить':
         context.user_data['location'] = answer
-        # keyboard6.append([answer]) в keyboard7 заменено на кнопку "Мое местоположение"
     else:
         context.user_data['location'] = None
     name = ', {}'.format(context.user_data['username']) if context.user_data[
@@ -276,9 +268,16 @@ def stop(update):
     return ConversationHandler.END
 
 
+def help(update, context):
+    update.message.reply_text(info_about_bot)
+
+
 def main():
     updater = Updater(os.getenv("TELEGRAMM_TOKEN"), use_context=True)
     dp = updater.dispatcher
+    dp.add_handler(Stop)
+    dp.add_handler(Help)
+    dp.add_handler(Start)
     dp.add_handler(conversation_handler)
     updater.start_polling()
     updater.idle()
@@ -290,9 +289,11 @@ def main():
     TIMETABLE_HANDLER
 ) = range(11)
 
-
+Help = CommandHandler('help', help)
+Stop = CommandHandler('stop', stop)
+Start = CommandHandler('start', start)
 conversation_handler = ConversationHandler(
-    entry_points=[CommandHandler('start', start)],
+    entry_points=[Start],
 
     states={
         ENTER_NAME: [MessageHandler(Filters.text, enter_name, pass_user_data=True)],
@@ -308,7 +309,7 @@ conversation_handler = ConversationHandler(
         WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)],
         TIMETABLE_HANDLER: [MessageHandler(Filters.text, timetable, pass_user_data=True)]
     },
-    fallbacks=[CommandHandler('stop', stop)]
+    fallbacks=[Stop]
 )
 
 

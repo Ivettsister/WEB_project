@@ -17,4 +17,4 @@ inline_maps = InlineKeyboardMarkup([
     [InlineKeyboardButton('Спутник', callback_data='sat')],
     [InlineKeyboardButton('Гибрид', callback_data='sat,skl')],
 ])
-reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=[(KeyboardButton('Предоставить Геолокацию', request_location=True), KeyboardButton('Пропустить'))])
+reply_keyboard = ReplyKeyboardMarkup(resize_keyboard=True, keyboard=['Пропустить'])
