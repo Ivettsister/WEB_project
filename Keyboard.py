@@ -12,6 +12,7 @@ keyboard7 = [['Вернуться назад'], ['Мое расположени�
 keyboard_back = [['Вернуться назад']]
 keyboard_number_of_companies = [['Вернуться назад'], ['Пропустить']]
 keyboard_get_result = [['Получить результат']]
+keyboard_all_stations = [['Вернуться назад']]
 inline_maps = InlineKeyboardMarkup([
     [InlineKeyboardButton('Карта', callback_data='map')],
     [InlineKeyboardButton('Спутник', callback_data='sat')],

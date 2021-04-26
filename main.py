@@ -1,13 +1,15 @@
+import os
+import logging
 from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters, CallbackQueryHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
-import os
 from maps_api.geocoder import get_ll_span, get_city, get_country_code, get_coordinates
 from weather import get_current_weather, get_forecast_weather
 from Keyboard import keyboard1, keyboard2, keyboard4, keyboard5, keyboard6, keyboard7,\
-    inline_maps, reply_keyboard, keyboard_back, keyboard_number_of_companies, keyboard_get_result
+    inline_maps, reply_keyboard, keyboard_back, keyboard_number_of_companies, keyboard_get_result,\
+    keyboard_all_stations
 from organizations import ask_for_orgs
-import logging
+from timetable import nearest_stations_request, get_transport
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -19,13 +21,13 @@ logger.setLevel(logging.DEBUG)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-info_about_bot = 'Этот бот, создан для помощи в ориентировании на местности.\nон может'+\
-                 ' предоставить карту по адресу запрошенного места, посчитать время на'+\
-                 ' дорогу до этого места (если вы предоставите свою геолокацию) и показать'+\
-                 ' прогноз погоды.'
+info_about_bot = 'Этот бот, создан для помощи в ориентировании на местности.\nОн может'+\
+                 ' предоставить карту по адресу запрошенного места, найти ближайшие организации'+\
+                 ' по вашему запросу, показать прогноз погоды, а также найти ближайшую к Вам станцию'+\
+                 ' и предоставить её расписания. Также в разработке находится функция построения маршрута!'
 
 
-def location(update):
+def location(update, context):
     return update.message.location
 
 
@@ -48,7 +50,6 @@ def enter_name(update, context):
     else:
         context.user_data['username'] = None
     update.message.reply_text('Где вы сейчас находитесь?', reply_markup=reply_keyboard)
-
     return ENTER_LOCATION
 
 
@@ -105,7 +106,7 @@ def main_menu(update, context):
 
     elif text == 'Вернуться назад':
         update.message.reply_text('Где вы сейчас находитесь?',
-                                  reply_markup=reply_keyboard, resize_keyboard=True)
+                                  reply_markup=reply_keyboard)
         return ENTER_LOCATION
     return MAIN_MENU
 
@@ -254,12 +255,28 @@ def timetable(update, context):
                                   reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
     else:
-        context.user_data['ll_organization'] = get_coordinates(text)
-        update.message.reply_text('Введите информацию об организации: телефон, название, '
-                                  'тип организации(например кинотеатр, музей и т.д.) адрес и др.\n'
-                                  'Обратите внимание, что если вы хотите изменить центральную точку'
-                                  ' поиска, то это можно сделать нажав кнопку "Вернуться назад"',
-                                  reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
+        strok = ", ".join([str(i) for i in get_coordinates(text)])
+        context.user_data['ll_station'] = strok.split(', ')
+        find_stations = nearest_stations_request(float(context.user_data['ll_station'][1]),
+                                                 float(context.user_data['ll_station'][0]))
+        context.user_data['find_stations'] = find_stations
+        for key in find_stations.keys():
+            keyboard_all_stations.append([key])
+        update.message.reply_text(
+            'Я нашёл следующие станции в радиусе 5 км....(выберите наиболее интересующую вас кнопку)',
+            reply_markup=ReplyKeyboardMarkup(keyboard_all_stations))
+        return GET_INFO_STATION
+
+
+def get_info_station(update, context):
+    need_station = update.message.text
+    if need_station == 'Вернуться назад':
+        return TIMETABLE_HANDLER
+    find_stations = context.user_data['find_stations']
+    print(find_stations)
+    spic = get_transport(find_stations[need_station])
+    for elem in spic:
+        update.message.reply_text(str(elem))
 
 
 def stop(update, context):
@@ -285,8 +302,8 @@ def main():
 (
     ENTER_NAME, MAIN_MENU, ENTER_LOCATION, STATIC_PHOTO, NEED_ADRESS, GET_LL_ORGANIZATION,
     GET_INFO_ABOUT_COMPANY, GET_NUMBER_OF_COMPANIES, GET_ORGANIZATIONS, WEATHER_HANDLER,
-    TIMETABLE_HANDLER
-) = range(11)
+    TIMETABLE_HANDLER, GET_INFO_STATION
+) = range(12)
 
 Help = CommandHandler('help', help)
 Stop = CommandHandler('stop', stop)
@@ -306,7 +323,8 @@ conversation_handler = ConversationHandler(
         GET_NUMBER_OF_COMPANIES: [MessageHandler(Filters.text, get_number_of_companies, pass_user_data=True)],
         GET_ORGANIZATIONS: [MessageHandler(Filters.text, get_organizations, pass_user_data=True)],
         WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)],
-        TIMETABLE_HANDLER: [MessageHandler(Filters.text, timetable, pass_user_data=True)]
+        TIMETABLE_HANDLER: [MessageHandler(Filters.text, timetable, pass_user_data=True)],
+        GET_INFO_STATION: [MessageHandler(Filters.text, get_info_station, pass_user_data=True)]
     },
     fallbacks=[Stop], allow_reentry=True
 )
