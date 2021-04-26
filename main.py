@@ -29,7 +29,7 @@ def location(update):
     return update.message.location
 
 
-def start(update):
+def start(update, context):
     update.message.reply_text(
         'Вас приветсвует бот, созданный для помощи в ориентировании на местности.\n' +
         'Я могу предоставить карту по адресу запрошенного места, посчитать время на дорогу до этого' +
@@ -277,7 +277,6 @@ def main():
     dp = updater.dispatcher
     dp.add_handler(Stop)
     dp.add_handler(Help)
-    dp.add_handler(Start)
     dp.add_handler(conversation_handler)
     updater.start_polling()
     updater.idle()
@@ -309,7 +308,7 @@ conversation_handler = ConversationHandler(
         WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)],
         TIMETABLE_HANDLER: [MessageHandler(Filters.text, timetable, pass_user_data=True)]
     },
-    fallbacks=[Stop]
+    fallbacks=[Stop], allow_reentry=True
 )
 
 
