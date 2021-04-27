@@ -44,7 +44,7 @@ def start(update, context):
 
 def enter_name(update, context):
     name = update.message.text
-    if name != 'Пропустить':
+    if name != '↪️ Пропустить':
         context.user_data['username'] = name
     else:
         context.user_data['username'] = None
@@ -54,7 +54,7 @@ def enter_name(update, context):
 
 def enter_location(update, context):
     answer = update.message.text
-    if answer != 'Пропустить':
+    if answer != '↪️ Пропустить':
         context.user_data['location'] = answer
     else:
         context.user_data['location'] = None
@@ -67,7 +67,7 @@ def enter_location(update, context):
 
 def main_menu(update, context):
     text = update.message.text
-    if text == 'Показать на карте':
+    if text == '🗺   Показать на карте':
         update.message.reply_text(
             'Выберите или введите, что мне показывать (при выборе своего местоположения' +
             ' обратите внимание, что используется, тот адрес который вы указывали ранее,' +
@@ -75,13 +75,13 @@ def main_menu(update, context):
             reply_markup=ReplyKeyboardMarkup(keyboard7, resize_keyboard=True))
         return STATIC_PHOTO
 
-    elif text == 'Найти ближайшую организацию':
+    elif text == '🔎 Найти ближайшую организацию':
         update.message.reply_text(
             'Выберите центр поиска (обязательно):',
             reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True))
         return GET_LL_ORGANIZATION
 
-    elif text == 'Погода':
+    elif text == '🌧  Погода':
         if context.user_data['location'] is None:
             update.message.reply_text('Сначала укажите свое местоположение')
         else:
@@ -91,14 +91,14 @@ def main_menu(update, context):
             )
             return WEATHER_HANDLER
 
-    elif text == 'Посчитать время на дорогу':
+    elif text == '🧮 Посчитать время на дорогу':
         update.message.reply_text(
             'Выберите параметры, которые Вы хотите настроить',
             reply_markup=ReplyKeyboardMarkup(keyboard5, resize_keyboard=True)
         )
         pass
 
-    elif text == 'Расписания':
+    elif text == '🛩  Расписания':
         update.message.reply_text(
             'Для начала я должен найти ближайшие к вам станции...' +
             'Выберите центр поиска (обязательно):',
@@ -106,7 +106,7 @@ def main_menu(update, context):
         )
         return TIMETABLE_HANDLER
 
-    elif text == 'Указать своё местоположение':
+    elif text == '🔙 Указать своё местоположение':
         update.message.reply_text('Где вы сейчас находитесь?',
                                   reply_markup=reply_keyboard)
         return ENTER_LOCATION
@@ -115,13 +115,13 @@ def main_menu(update, context):
 
 def get_ll_organization(update, context):
     text = update.message.text
-    if text == 'Мое расположение':
+    if text == '🌍  Мое расположение':
         if context.user_data['location'] is not None:
             text = context.user_data['location']
         else:
             update.message.reply_text('Вы не предоставляли собственного местоположения.')
-            text = 'Вернуться назад'
-    if text == 'Вернуться назад':
+            text = '🔙  Вернуться назад'
+    if text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...',
                                   reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
@@ -130,14 +130,14 @@ def get_ll_organization(update, context):
         update.message.reply_text('Введите информацию об организации: телефон, название, '
                                   'тип организации(например кинотеатр, музей и т.д.) адрес и др.\n'
                                   'Обратите внимание, что если вы хотите изменить центральную точку'
-                                  ' поиска, то это можно сделать нажав кнопку "Вернуться назад"',
+                                  ' поиска, то это можно сделать нажав кнопку "🔙  Вернуться назад"',
                                   reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
         return GET_INFO_ABOUT_COMPANY
 
 
 def get_info_about_company(update, context):
     text = update.message.text
-    if text == 'Вернуться назад':
+    if text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас к выбору центральной точки поиска организации',
                                   reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True))
         return GET_LL_ORGANIZATION
@@ -152,11 +152,11 @@ def get_info_about_company(update, context):
 
 def get_number_of_companies(update, context):
     text = update.message.text
-    if text == 'Пропустить':
+    if text == '↪️ Пропустить':
         context.user_data['number'] = 10
         update.message.reply_text('Выбрано число 10', reply_markup=ReplyKeyboardMarkup(keyboard_get_result))
         return GET_ORGANIZATIONS
-    elif text == 'Вернуться назад':
+    elif text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас к вводу информации об организации' +
                                   ' (ВНИМАНИЕ: бот запоминает только последний ввод информации об организации!)',
                                   reply_markup=ReplyKeyboardMarkup(keyboard_back, resize_keyboard=True))
@@ -193,13 +193,13 @@ def get_organizations(update, context):
 
 def static_photo(update, context):
     text = update.message.text
-    if text == 'Мое расположение':
+    if text == '🌍  Мое расположение':
         if context.user_data['location'] is not None:
             text = context.user_data['location']
         else:
             update.message.reply_text('Вы не предоставляли собственного местоположения.')
-            text = 'Вернуться назад'
-    if text == 'Вернуться назад':
+            text = '🔙  Вернуться назад'
+    if text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...',
                                   reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
@@ -231,29 +231,29 @@ def need_adress(update, context):
 
 def weather(update, context):
     text = update.message.text
-    if text == 'Текущая погода':
+    if text == '🌤  Текущая погода':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
             get_current_weather(city, code, os.getenv("WEATHER_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
-    elif text == 'Прогноз на 6 дней':
+    elif text == '☔️Прогноз на 6 дней':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
             get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN"),
                                  get_city(context.user_data['location'], 'ru-RU')))
-    elif text == 'Вернуться назад':
+    elif text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...)', reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
 
 
 def timetable(update, context):
     text = update.message.text
-    if text == 'Мое расположение':
+    if text == '🌍  Мое расположение':
         if context.user_data['location'] is not None:
             text = context.user_data['location']
         else:
             update.message.reply_text('Вы не предоставляли собственного местоположения.')
-            text = 'Вернуться назад'
-    if text == 'Вернуться назад':
+            text = '🔙  Вернуться назад'
+    if text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...',
                                   reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
@@ -263,7 +263,7 @@ def timetable(update, context):
         find_stations = nearest_stations_request(float(context.user_data['ll_station'][1]),
                                                  float(context.user_data['ll_station'][0]))
         context.user_data['find_stations'] = find_stations
-        context.user_data["keyboard_all_stations"] = [['Вернуться назад']]
+        context.user_data["keyboard_all_stations"] = [['🔙  Вернуться назад']]
         if len(context.user_data['find_stations']) == 0:
             update.message.reply_text(
                 'Я не нашёл ни одной станции (остановки) в радиусе 2 км от вас...',
@@ -280,7 +280,7 @@ def timetable(update, context):
 
 def get_info_station(update, context):
     need_station = update.message.text
-    if need_station == 'Вернуться назад':
+    if need_station == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю Вас к выбору местоположения... ' +
                                   'Выберите или введите, что мне показывать (при выборе своего местоположения' +
                                   ' обратите внимание, что используется, тот адрес который вы указывали ранее,' +
