@@ -1,9 +1,9 @@
-from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
+from telegram import ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton
 
 keyboard1 = [['Пропустить']]
 keyboard2 = [['Показать на карте'], ['Найти ближайшую организацию'], ['Посчитать время на дорогу'],
              ['Погода'], ['Расписания'],
-             ['Вернуться назад']]
+             ['Указать своё местоположение']]
 keyboard3 = [['Вернуться назад']]
 keyboard4 = [['Текущая погода'], ['Прогноз на 6 дней'], ['Вернуться назад']]
 keyboard5 = [['Пешком'], ['На общественном транспорте'], ['На машине']]

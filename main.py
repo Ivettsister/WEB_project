@@ -82,11 +82,14 @@ def main_menu(update, context):
         return GET_LL_ORGANIZATION
 
     elif text == 'Погода':
-        update.message.reply_text(
-            'Выберите параметры, которые Вы хотите настроить',
-            reply_markup=ReplyKeyboardMarkup(keyboard4, resize_keyboard=True)
-        )
-        return WEATHER_HANDLER
+        if context.user_data['location'] is None:
+            update.message.reply_text('Сначала укажите свое местоположение')
+        else:
+            update.message.reply_text(
+                'Выберите параметры, которые Вы хотите настроить',
+                reply_markup=ReplyKeyboardMarkup(keyboard4, resize_keyboard=True)
+            )
+            return WEATHER_HANDLER
 
     elif text == 'Посчитать время на дорогу':
         update.message.reply_text(
@@ -103,7 +106,7 @@ def main_menu(update, context):
         )
         return TIMETABLE_HANDLER
 
-    elif text == 'Вернуться назад':
+    elif text == 'Указать своё местоположение':
         update.message.reply_text('Где вы сейчас находитесь?',
                                   reply_markup=reply_keyboard)
         return ENTER_LOCATION
@@ -173,10 +176,12 @@ def get_number_of_companies(update, context):
 def get_organizations(update, context):
     context.user_data['ll_organization'] = str(context.user_data['ll_organization'][0]) + ', ' + \
                                            str(context.user_data['ll_organization'][1])
-    # update.message.reply_text(context.user_data['ll_organization'])
-    # update.message.reply_text(context.user_data['text_organization'])
-    # update.message.reply_text(context.user_data['number'])
     answer = ask_for_orgs(context.user_data['ll_organization'], context.user_data['text_organization'], context.user_data['number'])
+    if type(answer) == str:
+        update.message.reply_text(answer)
+        update.message.reply_text('Возвращаю вас в главное меню',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard2, resize_keyboard=True))
+        return MAIN_MENU
     if answer['size'] == 0:
         update.message.reply_text('Ничего не найдено')
     else:
@@ -204,7 +209,6 @@ def static_photo(update, context):
         else:
             context.user_data['need_adresses'] = [text]
         update.message.reply_text('Выберите тип карты снимка:', reply_markup=inline_maps)
-    # return STATIC_PHOTO
 
 
 def get_photo_handler(update, context):
@@ -283,7 +287,7 @@ def get_info_station(update, context):
                                   ' в случае необходимости обновите свое местоположение в главном меню)'
                                   ,
                                   reply_markup=ReplyKeyboardMarkup(keyboard6))
-        return
+        return TIMETABLE_HANDLER
     else:
         find_stations = context.user_data['find_stations']
         spic = get_transport(find_stations[need_station])

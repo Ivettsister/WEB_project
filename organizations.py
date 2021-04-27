@@ -22,14 +22,15 @@ def make_organization_request(ll, text, quantity=10):
     if response:
         json_response = response.json()
     else:
-        raise RuntimeError(f"""Ошибка выполнения запроса: {request_organize} 
-                        Http статус: {response.status_code} ({response.reason})""")
+        return f'Error occured with status {response.status_code} ({response.reason})'
     companies = json_response["features"]
     return companies
 
 
 def ask_for_orgs(ll, text, quantity=10):
     response = make_organization_request(ll, text, quantity)
+    if type(response) == str:
+        return response
     if response == []:
         answer = {'size': 0}
         return answer
@@ -45,18 +46,3 @@ def ask_for_orgs(ll, text, quantity=10):
         comps.append(formatted)
     answer['orgs'] = comps
     return answer
-
-
-# ll = "36.192629, 51.729312"
-# text = 'аптека'
-# organization_params = {
-#         "apikey": API_KEY,
-#         "text": 'аптека',
-#         "lang": "ru_RU",
-#         "type": "biz",
-#         "ll": ll,
-#         "results": 12,
-#         "spn": "0.05, 0.05"
-#     }
-# print(requests.get("https://search-maps.yandex.ru/v1/", params=organization_params).json())
-# print(make_organization_request(ll, text))
