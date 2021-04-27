@@ -32,7 +32,7 @@ def nearest_stations_request(lat, lon, distance=2):
             slov_stations[f"{title}"] = code
         return slov_stations
     else:
-        return 0
+        return {}
 
 
 def get_transport(code):

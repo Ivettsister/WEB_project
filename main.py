@@ -260,12 +260,18 @@ def timetable(update, context):
                                                  float(context.user_data['ll_station'][0]))
         context.user_data['find_stations'] = find_stations
         context.user_data["keyboard_all_stations"] = [['Вернуться назад']]
-        for key in find_stations.keys():
-            context.user_data["keyboard_all_stations"].append([key])
-        update.message.reply_text(
-            'Я нашёл следующие станции в радиусе 1 км....(выберите наиболее интересующую вас кнопку)',
-            reply_markup=ReplyKeyboardMarkup(context.user_data["keyboard_all_stations"]))
-        return GET_INFO_STATION
+        if len(context.user_data['find_stations']) == 0:
+            update.message.reply_text(
+                'Я не нашёл ни одной станции (остановки) в радиусе 2 км от вас...',
+                reply_markup=ReplyKeyboardMarkup(context.user_data["keyboard_all_stations"]))
+            return GET_INFO_STATION
+        else:
+            for key in find_stations.keys():
+                context.user_data["keyboard_all_stations"].append([key])
+            update.message.reply_text(
+                'Я нашёл следующие станции в радиусе 2 км....(выберите наиболее интересующую вас кнопку)',
+                reply_markup=ReplyKeyboardMarkup(context.user_data["keyboard_all_stations"]))
+            return GET_INFO_STATION
 
 
 def get_info_station(update, context):
