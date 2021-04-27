@@ -20,7 +20,7 @@ logger.setLevel(logging.DEBUG)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-info_about_bot = 'Этот бот, создан для помощи в ориентировании на местности.\nОн может'+\
+info_about_bot = '❗ Этот бот, создан для помощи в ориентировании на местности.\nОн может'+\
                  ' предоставить карту по адресу запрошенного места, найти ближайшие организации'+\
                  ' по вашему запросу, показать прогноз погоды, а также найти ближайшую к Вам станцию'+\
                  ' и предоставить её расписания. Также в разработке находится функция построения маршрута!'
@@ -32,10 +32,10 @@ def location(update, context):
 
 def start(update, context):
     update.message.reply_text(
-        'Вас приветсвует бот, созданный для помощи в ориентировании на местности.\n' +
+        '👋 Вас приветсвует бот, созданный для помощи в ориентировании на местности.\n' +
         'Я могу предоставить карту по адресу запрошенного места, посчитать время на дорогу до этого' +
         ' места (если вы предоставите свою геолокацию) и предоставить прогноз погоды.\n'
-        'Введите свое имя',
+        'Введите свое имя:',
         reply_markup=ReplyKeyboardMarkup(keyboard1,
                                          one_time_keyboard=True,
                                          resize_keyboard=True))
@@ -69,7 +69,7 @@ def main_menu(update, context):
     text = update.message.text
     if text == '🗺   Показать на карте':
         update.message.reply_text(
-            'Выберите или введите, что мне показывать (при выборе своего местоположения' +
+            '✅ Выберите или введите, что мне показывать (при выборе своего местоположения' +
             ' обратите внимание, что используется, тот адрес который вы указывали ранее,' +
             ' в случае необходимости обновите свое местоположение в главном меню)',
             reply_markup=ReplyKeyboardMarkup(keyboard7, resize_keyboard=True))
@@ -77,23 +77,23 @@ def main_menu(update, context):
 
     elif text == '🔎 Найти ближайшую организацию':
         update.message.reply_text(
-            'Выберите центр поиска (обязательно):',
+            '✅ Выберите центр поиска (обязательно):',
             reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True))
         return GET_LL_ORGANIZATION
 
     elif text == '🌧  Погода':
         if context.user_data['location'] is None:
-            update.message.reply_text('Сначала укажите свое местоположение')
+            update.message.reply_text('Сначала укажите свое местоположение ❗')
         else:
             update.message.reply_text(
-                'Выберите параметры, которые Вы хотите настроить',
+                '✅ Выберите параметры, которые Вы хотите настроить',
                 reply_markup=ReplyKeyboardMarkup(keyboard4, resize_keyboard=True)
             )
             return WEATHER_HANDLER
 
     elif text == '🧮 Посчитать время на дорогу':
         update.message.reply_text(
-            'Выберите параметры, которые Вы хотите настроить',
+            '✅ Выберите параметры, которые Вы хотите настроить',
             reply_markup=ReplyKeyboardMarkup(keyboard5, resize_keyboard=True)
         )
         pass
@@ -101,7 +101,7 @@ def main_menu(update, context):
     elif text == '🛩  Расписания':
         update.message.reply_text(
             'Для начала я должен найти ближайшие к вам станции...' +
-            'Выберите центр поиска (обязательно):',
+            '✅ Выберите центр поиска (обязательно):',
             reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True)
         )
         return TIMETABLE_HANDLER
@@ -119,7 +119,7 @@ def get_ll_organization(update, context):
         if context.user_data['location'] is not None:
             text = context.user_data['location']
         else:
-            update.message.reply_text('Вы не предоставляли собственного местоположения.')
+            update.message.reply_text('Вы не предоставляли собственного местоположения ❗')
             text = '🔙  Вернуться назад'
     if text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...',
@@ -127,7 +127,7 @@ def get_ll_organization(update, context):
         return MAIN_MENU
     else:
         context.user_data['ll_organization'] = get_coordinates(text)
-        update.message.reply_text('Введите информацию об организации: телефон, название, '
+        update.message.reply_text('❗ Введите информацию об организации: телефон, название, '
                                   'тип организации(например кинотеатр, музей и т.д.) адрес и др.\n'
                                   'Обратите внимание, что если вы хотите изменить центральную точку'
                                   ' поиска, то это можно сделать нажав кнопку "🔙  Вернуться назад"',
@@ -143,7 +143,7 @@ def get_info_about_company(update, context):
         return GET_LL_ORGANIZATION
     else:
         context.user_data['text_organization'] = text
-        update.message.reply_text('Выберите до скольки найденных организаций отобразить'
+        update.message.reply_text('✅ Выберите до скольки найденных организаций отобразить'
                                   '(выберите число от 1 до 50).'
                                   'По умолчанию число: 10',
                                   reply_markup=ReplyKeyboardMarkup(keyboard_number_of_companies, resize_keyboard=True))
@@ -168,9 +168,9 @@ def get_number_of_companies(update, context):
                 update.message.reply_text(f'Выбрано число {int(text)}', reply_markup=ReplyKeyboardMarkup(keyboard_get_result))
                 return GET_ORGANIZATIONS
             else:
-                update.message.reply_text('Введено некорректное число, введите число из диапазона от 1 до 50')
+                update.message.reply_text('Введено некорректное число, введите число из диапазона от 1 до 50 ❗')
         except:
-            update.message.reply_text('Некорректный ввод, попробуйте еще раз')
+            update.message.reply_text('Некорректный ввод, попробуйте еще раз ❗')
 
 
 def get_organizations(update, context):
@@ -183,7 +183,7 @@ def get_organizations(update, context):
                                   reply_markup=ReplyKeyboardMarkup(keyboard2, resize_keyboard=True))
         return MAIN_MENU
     if answer['size'] == 0:
-        update.message.reply_text('Ничего не найдено')
+        update.message.reply_text('Ничего не найдено ❗')
     else:
         for info in answer['orgs']:
             update.message.reply_text(info)
@@ -197,7 +197,7 @@ def static_photo(update, context):
         if context.user_data['location'] is not None:
             text = context.user_data['location']
         else:
-            update.message.reply_text('Вы не предоставляли собственного местоположения.')
+            update.message.reply_text('Вы не предоставляли собственного местоположения ❗')
             text = '🔙  Вернуться назад'
     if text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...',
@@ -208,7 +208,7 @@ def static_photo(update, context):
             context.user_data['need_adresses'].append(text)
         else:
             context.user_data['need_adresses'] = [text]
-        update.message.reply_text('Выберите тип карты снимка:', reply_markup=inline_maps)
+        update.message.reply_text('✅ Выберите тип карты снимка:', reply_markup=inline_maps)
 
 
 def get_photo_handler(update, context):
@@ -219,7 +219,7 @@ def get_photo_handler(update, context):
     context.bot.edit_message_text(
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
-        text="[​​​​​​​​​​​]{}".format(static_api_request, 'Нашёл:'),
+        text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
         parse_mode='markdown',
         reply_markup=inline_maps
     )
@@ -251,7 +251,7 @@ def timetable(update, context):
         if context.user_data['location'] is not None:
             text = context.user_data['location']
         else:
-            update.message.reply_text('Вы не предоставляли собственного местоположения.')
+            update.message.reply_text('Вы не предоставляли собственного местоположения ❗')
             text = '🔙  Вернуться назад'
     if text == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю вас в главное меню...',
@@ -266,14 +266,14 @@ def timetable(update, context):
         context.user_data["keyboard_all_stations"] = [['🔙  Вернуться назад']]
         if len(context.user_data['find_stations']) == 0:
             update.message.reply_text(
-                'Я не нашёл ни одной станции (остановки) в радиусе 2 км от вас...',
+                'Я не нашёл ни одной станции (остановки) в радиусе 2 км от вас ❗',
                 reply_markup=ReplyKeyboardMarkup(context.user_data["keyboard_all_stations"]))
             return GET_INFO_STATION
         else:
             for key in find_stations.keys():
                 context.user_data["keyboard_all_stations"].append([key])
             update.message.reply_text(
-                'Я нашёл следующие станции в радиусе 2 км....(выберите наиболее интересующую вас кнопку)',
+                '💡 Я нашёл следующие станции в радиусе 2 км....(выберите наиболее интересующую вас кнопку)',
                 reply_markup=ReplyKeyboardMarkup(context.user_data["keyboard_all_stations"]))
             return GET_INFO_STATION
 
@@ -282,7 +282,7 @@ def get_info_station(update, context):
     need_station = update.message.text
     if need_station == '🔙  Вернуться назад':
         update.message.reply_text('Возвращаю Вас к выбору местоположения... ' +
-                                  'Выберите или введите, что мне показывать (при выборе своего местоположения' +
+                                  '✅ Выберите или введите, что мне показывать (при выборе своего местоположения' +
                                   ' обратите внимание, что используется, тот адрес который вы указывали ранее,' +
                                   ' в случае необходимости обновите свое местоположение в главном меню)'
                                   ,
@@ -292,11 +292,11 @@ def get_info_station(update, context):
         find_stations = context.user_data['find_stations']
         spic = get_transport(find_stations[need_station])
         if len(spic) == 0:
-            update.message.reply_text('С этой станции (остановки) не найдено никаких рейсов, кроме внутригородских!')
+            update.message.reply_text('С этой станции (остановки) не найдено никаких рейсов, кроме внутригородских ❗')
         else:
-            update.message.reply_text('С данной станции (остановки) зарегистрированны следующие маршруты:')
+            update.message.reply_text('💡 С данной станции (остановки) зарегистрированны следующие маршруты:')
             for elem in spic:
-                update.message.reply_text(str(elem))
+                update.message.reply_text(f"📌 {str(elem)}")
         return GET_INFO_STATION
 
 
