@@ -8,7 +8,7 @@ load_dotenv()
 API_KEY = os.getenv("TIMETABLE_TOKEN")
 
 
-def nearest_stations_request(lat, lon, distance=1):
+def nearest_stations_request(lat, lon, distance=2):
     request_organize = "https://api.rasp.yandex.net/v3.0/nearest_stations/"
     organization_params = {
         "apikey": API_KEY,
@@ -48,12 +48,12 @@ def get_transport(code):
     else:
         raise RuntimeError(f"""Ошибка выполнения запроса: {request_organize} 
                         Http статус: {response.status_code} ({response.reason})""")
-    stations = json_response["schedule"][0:5]
+    stations = json_response["schedule"]
     spic = []
     for station in stations:
         find_title = station["thread"]["title"]
         find_departure = station["departure"]
         find_departure = find_departure.split('T')[1]
         if f"{find_title} - {find_departure}" not in spic:
-            spic.append(f"{find_title} - {find_departure}")
+            spic.append(f"{find_title}; Первый рейс по расписанию - {find_departure}")
     return spic

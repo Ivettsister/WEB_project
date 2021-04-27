@@ -6,8 +6,7 @@ from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from maps_api.geocoder import get_ll_span, get_city, get_country_code, get_coordinates
 from weather import get_current_weather, get_forecast_weather
 from Keyboard import keyboard1, keyboard2, keyboard4, keyboard5, keyboard6, keyboard7,\
-    inline_maps, reply_keyboard, keyboard_back, keyboard_number_of_companies, keyboard_get_result,\
-    keyboard_all_stations
+    inline_maps, reply_keyboard, keyboard_back, keyboard_number_of_companies, keyboard_get_result
 from organizations import ask_for_orgs
 from timetable import nearest_stations_request, get_transport
 
@@ -70,8 +69,8 @@ def main_menu(update, context):
     text = update.message.text
     if text == 'Показать на карте':
         update.message.reply_text(
-            'Выберите или введите, что мне показывать (при выборе своего местоположения'+
-            ' обратите внимание, что используется, тот адрес который вы указывали ранее,'+
+            'Выберите или введите, что мне показывать (при выборе своего местоположения' +
+            ' обратите внимание, что используется, тот адрес который вы указывали ранее,' +
             ' в случае необходимости обновите свое местоположение в главном меню)',
             reply_markup=ReplyKeyboardMarkup(keyboard7, resize_keyboard=True))
         return STATIC_PHOTO
@@ -260,23 +259,35 @@ def timetable(update, context):
         find_stations = nearest_stations_request(float(context.user_data['ll_station'][1]),
                                                  float(context.user_data['ll_station'][0]))
         context.user_data['find_stations'] = find_stations
+        context.user_data["keyboard_all_stations"] = [['Вернуться назад']]
         for key in find_stations.keys():
-            keyboard_all_stations.append([key])
+            context.user_data["keyboard_all_stations"].append([key])
         update.message.reply_text(
-            'Я нашёл следующие станции в радиусе 5 км....(выберите наиболее интересующую вас кнопку)',
-            reply_markup=ReplyKeyboardMarkup(keyboard_all_stations))
+            'Я нашёл следующие станции в радиусе 1 км....(выберите наиболее интересующую вас кнопку)',
+            reply_markup=ReplyKeyboardMarkup(context.user_data["keyboard_all_stations"]))
         return GET_INFO_STATION
 
 
 def get_info_station(update, context):
     need_station = update.message.text
     if need_station == 'Вернуться назад':
-        return TIMETABLE_HANDLER
-    find_stations = context.user_data['find_stations']
-    print(find_stations)
-    spic = get_transport(find_stations[need_station])
-    for elem in spic:
-        update.message.reply_text(str(elem))
+        update.message.reply_text('Возвращаю Вас к выбору местоположения... ' +
+                                  'Выберите или введите, что мне показывать (при выборе своего местоположения' +
+                                  ' обратите внимание, что используется, тот адрес который вы указывали ранее,' +
+                                  ' в случае необходимости обновите свое местоположение в главном меню)'
+                                  ,
+                                  reply_markup=ReplyKeyboardMarkup(keyboard6))
+        return
+    else:
+        find_stations = context.user_data['find_stations']
+        spic = get_transport(find_stations[need_station])
+        if len(spic) == 0:
+            update.message.reply_text('С этой станции (остановки) не найдено никаких рейсов, кроме внутригородских!')
+        else:
+            update.message.reply_text('С данной станции (остановки) зарегистрированны следующие маршруты:')
+            for elem in spic:
+                update.message.reply_text(str(elem))
+        return GET_INFO_STATION
 
 
 def stop(update, context):
