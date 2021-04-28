@@ -400,7 +400,7 @@ def get_info_station(update, context):
 
 
 def stop(update, context):
-    update.message.reply_text('Пока!', reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text('👋 Пока!', reply_markup=ReplyKeyboardRemove())
     update.message.reply_text('Для того, чтобы начать работу с ботом заново напишите /start')
     return ConversationHandler.END
 

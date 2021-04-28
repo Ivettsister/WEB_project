@@ -23,6 +23,8 @@ def route_request(point_from, point_to, mode='walking'):
         route = json_response["route"]["legs"]
         it_waypoints = ''
         waypoints = route[0]["steps"][0]["polyline"]["points"]
+        while len(waypoints) > 100:
+            waypoints = waypoints[0:-1:2]
         for index in range(len(waypoints)):
             if index != (len(waypoints) - 1):
                 it_waypoints += f"{waypoints[index][1]},{waypoints[index][0]},"
