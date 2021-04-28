@@ -6,10 +6,7 @@ API_KEY = '40d1649f-0493-4b70-98ba-98533de7710b'
 def geocoder_request(**kwargs):
     response = requests.get('http://geocode-maps.yandex.ru/1.x/', params=kwargs)
     if not response:
-        raise RuntimeError(
-            'Ошибка выполнения запроса:'
-            'Http статус: {} ({})'.format(response.status_code, response.reason)
-        )
+        return None
     return response.json()
 
 
@@ -23,10 +20,7 @@ def geocode(address):
     if response:
         json_response = response.json()
     else:
-        raise RuntimeError(
-            f"""Ошибка выполнения запроса:
-            {geocoder_request}
-            Http статус: {response.status_code} ({response.reason})""")
+        return None
     features = json_response["response"]["GeoObjectCollection"]["featureMember"]
     if features:
         return features[0]["GeoObject"]
@@ -70,10 +64,7 @@ def get_nearest_object(point, kind):
         geocoder_params['kind'] = kind
     response = requests.get(geocoder_request, params=geocoder_params)
     if not response:
-        raise RuntimeError(
-            f"""Ошибка выполнения запроса:
-            {geocoder_request}
-            Http статус: {response.status_code,} ({response.reason})""")
+        return None
     json_response = response.json()
     features = json_response["response"]["GeoObjectCollection"]["featureMember"]
     if features:
@@ -114,7 +105,6 @@ def get_country_code(data):
             data = data[spic[i]]
         return data
     except (IndexError, KeyError):
-        print('Oh, fail!')
         return None
 
 

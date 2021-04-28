@@ -22,15 +22,15 @@ def make_organization_request(ll, text, quantity=10):
     if response:
         json_response = response.json()
     else:
-        return f'Error occured with status {response.status_code} ({response.reason})'
+        return None
     companies = json_response["features"]
     return companies
 
 
 def ask_for_orgs(ll, text, quantity=10):
     response = make_organization_request(ll, text, quantity)
-    if type(response) == str:
-        return response
+    if response is None:
+        return None
     if response == []:
         answer = {'size': 0}
         return answer

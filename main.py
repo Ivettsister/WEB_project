@@ -10,6 +10,8 @@ from Keyboard import keyboard1, keyboard2, keyboard4, keyboard5, keyboard6, keyb
 from organizations import ask_for_orgs
 from timetable import nearest_stations_request, get_transport
 from planing_route import route_request
+from error_messanger import send_message
+
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -24,7 +26,8 @@ load_dotenv(dotenv_path)
 info_about_bot = '❗ Этот бот, создан для помощи в ориентировании на местности.\nОн может' + \
                  ' предоставить карту по адресу запрошенного места, найти ближайшие организации' + \
                  ' по вашему запросу, показать прогноз погоды, а также найти ближайшую к Вам станцию' + \
-                 ' и предоставить её расписания. Также в разработке находится функция построения маршрута!'
+                 ' и предоставить её расписания. Также в разработке находится функция построения маршрута!\n' \
+                 'Поддерживаемые комманды:\n/start\n/help\n/stop'
 
 
 def location(update, context):
@@ -183,10 +186,11 @@ def get_organizations(update, context):
                                            str(context.user_data['ll_organization'][1])
     answer = ask_for_orgs(context.user_data['ll_organization'], context.user_data['text_organization'],
                           context.user_data['number'])
-    if type(answer) == str:
-        update.message.reply_text(answer)
-        update.message.reply_text('Возвращаю вас в главное меню',
-                                  reply_markup=ReplyKeyboardMarkup(keyboard2, resize_keyboard=True))
+    if answer is None:
+        query = update.callback_query
+        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+                                            'Для продолжения корректной работы программы перезапустите бота, '
+                                            'используя комманды /stop /start')
         return MAIN_MENU
     if answer['size'] == 0:
         update.message.reply_text('Ничего не найдено ❗')
@@ -211,25 +215,32 @@ def static_photo(update, context):
                                   reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
     else:
-        if 'need_adresses' in context.user_data.keys():
-            context.user_data['need_adresses'].append(text)
-        else:
-            context.user_data['need_adresses'] = [text]
+        context.user_data['need_adresses'] = text
         update.message.reply_text('✅ Выберите тип карты снимка:', reply_markup=inline_maps)
 
 
 def get_photo_handler(update, context):
     query = update.callback_query
     context.user_data['need_maptype'] = query.data
-    ll, spn = get_ll_span(context.user_data['need_adresses'][-1])
+    ll, spn = get_ll_span(context.user_data['need_adresses'])
+    if ll is None or spn is None:
+        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+                                            'Для продолжения корректной работы программы перезапустите бота, '
+                                            'используя комманды /stop /start')
+        return MAIN_MENU
     static_api_request = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={context.user_data['need_maptype']}"
-    context.bot.edit_message_text(
+    try:
+        context.bot.edit_message_text(
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
         text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
         parse_mode='markdown',
-        reply_markup=inline_maps
-    )
+        reply_markup=inline_maps)
+    except:
+        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+                     'Для продолжения корректной работы программы перезапустите бота, '
+                     'используя комманды /stop /start')
+        return MAIN_MENU
 
 
 def need_adress(update, context):
@@ -283,30 +294,51 @@ def get_route_handler(update, context):
     point_to = point_to.split(',')
     point_to = f"{point_to[1]},{point_to[0]}"
     waypoints = route_request(point_from, point_to)
+    if waypoints is None:
+        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+                                            'Для продолжения корректной работы программы перезапустите бота, '
+                                            'используя комманды /stop /start')
+        return MAIN_MENU
     static_api_request = f"http://static-maps.yandex.ru/1.x/?l={context.user_data['need_maptype']}&pl={waypoints}"
-    context.bot.edit_message_text(
+    try:
+        context.bot.edit_message_text(
         chat_id=query.message.chat_id,
         message_id=query.message.message_id,
         text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
         parse_mode='markdown',
-        reply_markup=inline_maps
-    )
+        reply_markup=inline_maps)
+    except:
+        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+                     'Для продолжения корректной работы программы перезапустите бота, '
+                     'используя комманды /stop /start')
+        return MAIN_MENU
 
 
 def weather(update, context):
     text = update.message.text
     if text == '🌤  Текущая погода':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
+        if city is None or code is None:
+            update.message.reply_text('Во время выполнения программы произошла ошибка')
+            update.message.reply_text('Возвращаю вас в главное меню...)',
+                                      reply_markup=ReplyKeyboardMarkup(keyboard2))
+            return MAIN_MENU
         update.message.reply_text(
             get_current_weather(city, code, os.getenv("WEATHER_TOKEN"),
                                 get_city(context.user_data['location'], 'ru-RU')))
     elif text == '☔️Прогноз на 6 дней':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
+        if city is None or code is None:
+            update.message.reply_text('Во время выполнения программы произошла ошибка')
+            update.message.reply_text('Возвращаю вас в главное меню...)',
+                                      reply_markup=ReplyKeyboardMarkup(keyboard2))
+            return MAIN_MENU
         update.message.reply_text(
             get_forecast_weather(city, code, os.getenv("WEATHER_TOKEN"),
                                  get_city(context.user_data['location'], 'ru-RU')))
     elif text == '🔙  Вернуться назад':
-        update.message.reply_text('Возвращаю вас в главное меню...)', reply_markup=ReplyKeyboardMarkup(keyboard2))
+        update.message.reply_text('Возвращаю вас в главное меню...)',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard2))
         return MAIN_MENU
 
 
