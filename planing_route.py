@@ -21,10 +21,8 @@ def route_request(point_from, point_to, mode='walking'):
         raise RuntimeError(f"""Ошибка выполнения запроса: {request_organize} 
                             Http статус: {response.status_code} ({response.reason})""")
     route = json_response["route"]["legs"]
-    print(route)
     it_waypoints = ''
     waypoints = route[0]["steps"][0]["polyline"]["points"]
-    print(waypoints)
     for index in range(len(waypoints)):
         if index != (len(waypoints) - 1):
             it_waypoints += f"{waypoints[index][1]},{waypoints[index][0]},"

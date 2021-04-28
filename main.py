@@ -5,7 +5,7 @@ from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHa
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from maps_api.geocoder import get_ll_span, get_city, get_country_code, get_coordinates
 from weather import get_current_weather, get_forecast_weather
-from Keyboard import keyboard1, keyboard2, keyboard4, keyboard5, keyboard6, keyboard7,\
+from Keyboard import keyboard1, keyboard2, keyboard4, keyboard5, keyboard6, keyboard7, \
     inline_maps, reply_keyboard, keyboard_back, keyboard_number_of_companies, keyboard_get_result
 from organizations import ask_for_orgs
 from timetable import nearest_stations_request, get_transport
@@ -21,9 +21,9 @@ logger.setLevel(logging.DEBUG)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
-info_about_bot = '❗ Этот бот, создан для помощи в ориентировании на местности.\nОн может'+\
-                 ' предоставить карту по адресу запрошенного места, найти ближайшие организации'+\
-                 ' по вашему запросу, показать прогноз погоды, а также найти ближайшую к Вам станцию'+\
+info_about_bot = '❗ Этот бот, создан для помощи в ориентировании на местности.\nОн может' + \
+                 ' предоставить карту по адресу запрошенного места, найти ближайшие организации' + \
+                 ' по вашему запросу, показать прогноз погоды, а также найти ближайшую к Вам станцию' + \
                  ' и предоставить её расписания. Также в разработке находится функция построения маршрута!'
 
 
@@ -92,7 +92,7 @@ def main_menu(update, context):
             )
             return WEATHER_HANDLER
 
-    elif text == '🧮 Построить маршрут и посчитать время на дорогу':
+    elif text == '🧮 Построить маршрут':
         update.message.reply_text(
             'Для начала я должен понять, от какой точки мне строить ваш маршрут...' +
             '✅ Выберите или введите адрес старта, при выборе кнопки "🌍  Мое расположение"' +
@@ -169,7 +169,8 @@ def get_number_of_companies(update, context):
         try:
             if 1 <= int(text) <= 50:
                 context.user_data['number'] = int(text)
-                update.message.reply_text(f'Выбрано число {int(text)}', reply_markup=ReplyKeyboardMarkup(keyboard_get_result))
+                update.message.reply_text(f'Выбрано число {int(text)}',
+                                          reply_markup=ReplyKeyboardMarkup(keyboard_get_result))
                 return GET_ORGANIZATIONS
             else:
                 update.message.reply_text('Введено некорректное число, введите число из диапазона от 1 до 50 ❗')
@@ -180,7 +181,8 @@ def get_number_of_companies(update, context):
 def get_organizations(update, context):
     context.user_data['ll_organization'] = str(context.user_data['ll_organization'][0]) + ', ' + \
                                            str(context.user_data['ll_organization'][1])
-    answer = ask_for_orgs(context.user_data['ll_organization'], context.user_data['text_organization'], context.user_data['number'])
+    answer = ask_for_orgs(context.user_data['ll_organization'], context.user_data['text_organization'],
+                          context.user_data['number'])
     if type(answer) == str:
         update.message.reply_text(answer)
         update.message.reply_text('Возвращаю вас в главное меню',
@@ -191,7 +193,8 @@ def get_organizations(update, context):
     else:
         for info in answer['orgs']:
             update.message.reply_text(info)
-    update.message.reply_text('Возвращаю вас в главное меню', reply_markup=ReplyKeyboardMarkup(keyboard2, resize_keyboard=True))
+    update.message.reply_text('Возвращаю вас в главное меню',
+                              reply_markup=ReplyKeyboardMarkup(keyboard2, resize_keyboard=True))
     return MAIN_MENU
 
 
@@ -251,12 +254,18 @@ def get_route_from(update, context):
         else:
             context.user_data['from_adresses'] = [text]
         update.message.reply_text(
-            '✅ Пришлите мне точку финиша планируемого Вами маршрута!')
+            '✅ Пришлите мне точку финиша планируемого Вами маршрута!',
+            reply_markup=ReplyKeyboardMarkup(keyboard_back))
         return GET_ROUTE_TO
 
 
 def get_route_to(update, context):
     text = update.message.text
+    if text == '🔙  Вернуться назад':
+        update.message.reply_text(
+            'Возвращаю вас к выбору точки старта маршрута...',
+            reply_markup=ReplyKeyboardMarkup(keyboard6))
+        return GET_ROUTE
     if 'to_adresses' in context.user_data.keys():
         context.user_data['to_adresses'].append(text)
     else:
@@ -274,7 +283,6 @@ def get_route_handler(update, context):
     point_to = point_to.split(',')
     point_to = f"{point_to[1]},{point_to[0]}"
     waypoints = route_request(point_from, point_to)
-    print(waypoints)
     static_api_request = f"http://static-maps.yandex.ru/1.x/?l={context.user_data['need_maptype']}&pl={waypoints}"
     context.bot.edit_message_text(
         chat_id=query.message.chat_id,
@@ -290,7 +298,8 @@ def weather(update, context):
     if text == '🌤  Текущая погода':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
-            get_current_weather(city, code, os.getenv("WEATHER_TOKEN"), get_city(context.user_data['location'], 'ru-RU')))
+            get_current_weather(city, code, os.getenv("WEATHER_TOKEN"),
+                                get_city(context.user_data['location'], 'ru-RU')))
     elif text == '☔️Прогноз на 6 дней':
         city, code = get_city(context.user_data['location']), get_country_code(context.user_data['location'])
         update.message.reply_text(
@@ -408,7 +417,6 @@ conversation_handler = ConversationHandler(
     },
     fallbacks=[Stop], allow_reentry=True
 )
-
 
 if __name__ == '__main__':
     main()
