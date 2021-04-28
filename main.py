@@ -47,11 +47,14 @@ def start(update, context):
 
 
 def enter_name(update, context):
-    name = update.message.text
+    message = update.message
+    name = message.text
+    context.user_data['chat_id'] = message.chat.id
     if name != '↪️ Пропустить':
         context.user_data['username'] = name
     else:
         context.user_data['username'] = None
+
     update.message.reply_text('Где вы сейчас находитесь?', reply_markup=reply_keyboard)
     return ENTER_LOCATION
 
@@ -187,8 +190,7 @@ def get_organizations(update, context):
     answer = ask_for_orgs(context.user_data['ll_organization'], context.user_data['text_organization'],
                           context.user_data['number'])
     if answer is None:
-        query = update.callback_query
-        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+        send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
                                             'Для продолжения корректной работы программы перезапустите бота, '
                                             'используя комманды /stop /start')
         return MAIN_MENU
@@ -224,7 +226,7 @@ def get_photo_handler(update, context):
     context.user_data['need_maptype'] = query.data
     ll, spn = get_ll_span(context.user_data['need_adresses'])
     if ll is None or spn is None:
-        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+        send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
                                             'Для продолжения корректной работы программы перезапустите бота, '
                                             'используя комманды /stop /start')
         return MAIN_MENU
@@ -237,7 +239,7 @@ def get_photo_handler(update, context):
         parse_mode='markdown',
         reply_markup=inline_maps)
     except:
-        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+        send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
                      'Для продолжения корректной работы программы перезапустите бота, '
                      'используя комманды /stop /start')
         return MAIN_MENU
@@ -295,7 +297,7 @@ def get_route_handler(update, context):
     point_to = f"{point_to[1]},{point_to[0]}"
     waypoints = route_request(point_from, point_to)
     if waypoints is None:
-        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+        send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
                                             'Для продолжения корректной работы программы перезапустите бота, '
                                             'используя комманды /stop /start')
         return MAIN_MENU
@@ -308,7 +310,7 @@ def get_route_handler(update, context):
         parse_mode='markdown',
         reply_markup=inline_maps)
     except:
-        send_message(query.message.chat_id, 'Во время исполнения программы произошла ошибка.\n'
+        send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
                      'Для продолжения корректной работы программы перезапустите бота, '
                      'используя комманды /stop /start')
         return MAIN_MENU
@@ -398,7 +400,7 @@ def get_info_station(update, context):
 
 
 def stop(update, context):
-    update.message.reply_text('👋 Пока!', reply_markup=ReplyKeyboardRemove())
+    update.message.reply_text('Пока!', reply_markup=ReplyKeyboardRemove())
     update.message.reply_text('Для того, чтобы начать работу с ботом заново напишите /start')
     return ConversationHandler.END
 
