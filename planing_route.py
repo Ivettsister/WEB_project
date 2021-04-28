@@ -1,34 +1,33 @@
 import requests
+import os
+from dotenv import load_dotenv
 
-API_KEY = 'ждём...'
-
-
-def route_request(**kwargs):
-    response = requests.get('https://api.routing.yandex.net/v2/route', params=kwargs)
-    if not response:
-        raise RuntimeError(
-            'Ошибка выполнения запроса:'
-            'Http статус: {} ({})'.format(response.status_code, response.reason)
-        )
-    return response.json()
+load_dotenv()
+API_KEY = os.getenv("ROUTE_TOKEN")
 
 
-def geocode(from_adress, to_adress):
-    response = requests.get(f"https://api.routing.yandex.net/v2/route?waypoints=56.856617,60.602026|56.795675,60.631176&mode=transit&apikey={API_KEY}")
+def route_request(point_from, point_to, mode='walking'):
+    request_organize = "https://api.routing.yandex.net/v2/route"
+    route_between = f"{point_from}|{point_to}"
+    organization_params = {
+        "apikey": API_KEY,
+        "waypoints": route_between,
+        "mode": mode
+    }
+    response = requests.get(request_organize, params=organization_params)
     if response:
         json_response = response.json()
     else:
-        raise RuntimeError(
-            f"""Ошибка выполнения запроса:
-            {route_request}
-            Http статус: {response.status_code} ({response.reason})""")
-    features = json_response["response"]
-    if features:
-        return features
-    else:
-        return None
-
-
-from_adress = '37.500342,55.931225'
-to_adress = '37.518434,55.929444'
-print(geocode(from_adress, to_adress))
+        raise RuntimeError(f"""Ошибка выполнения запроса: {request_organize} 
+                            Http статус: {response.status_code} ({response.reason})""")
+    route = json_response["route"]["legs"]
+    print(route)
+    it_waypoints = ''
+    waypoints = route[0]["steps"][0]["polyline"]["points"]
+    print(waypoints)
+    for index in range(len(waypoints)):
+        if index != (len(waypoints) - 1):
+            it_waypoints += f"{waypoints[index][1]},{waypoints[index][0]},"
+        else:
+            it_waypoints += f"{waypoints[index][1]},{waypoints[index][0]}"
+    return it_waypoints

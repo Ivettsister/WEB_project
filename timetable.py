@@ -3,9 +3,17 @@ import datetime
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
 API_KEY = os.getenv("TIMETABLE_TOKEN")
+slov_kinds_transport = {'station': 'станция', 'platform': 'платформа',
+                        'stop': 'остановочный пункт', 'checkpoint': 'блок-пост',
+                        'post': 'пост', 'crossing': 'разъезд',
+                        'overtaking_point': 'обгонный пункт',
+                        'train_station': 'вокзал', 'airport': 'аэропорт',
+                        'bus_station': 'автовокзал', 'bus_stop': 'автобусная остановка',
+                        'unknown': 'станция без типа', 'port': 'порт',
+                        'port_point': 'портпункт', 'wharf': 'пристань',
+                        'river_port': 'речной вокзал', 'marine_station': 'морской вокзал'}
 
 
 def nearest_stations_request(lat, lon, distance=2):
@@ -28,8 +36,9 @@ def nearest_stations_request(lat, lon, distance=2):
         slov_stations = {}
         for station in stations:
             title = station["title"]
+            kind = slov_kinds_transport[station["station_type"]]
             code = station["code"]
-            slov_stations[f"{title}"] = code
+            slov_stations[f"{title} - {kind}"] = code
         return slov_stations
     else:
         return {}

@@ -9,6 +9,7 @@ from Keyboard import keyboard1, keyboard2, keyboard4, keyboard5, keyboard6, keyb
     inline_maps, reply_keyboard, keyboard_back, keyboard_number_of_companies, keyboard_get_result
 from organizations import ask_for_orgs
 from timetable import nearest_stations_request, get_transport
+from planing_route import route_request
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -91,12 +92,15 @@ def main_menu(update, context):
             )
             return WEATHER_HANDLER
 
-    elif text == '🧮 Посчитать время на дорогу':
+    elif text == '🧮 Построить маршрут и посчитать время на дорогу':
         update.message.reply_text(
-            '✅ Выберите параметры, которые Вы хотите настроить',
-            reply_markup=ReplyKeyboardMarkup(keyboard5, resize_keyboard=True)
+            'Для начала я должен понять, от какой точки мне строить ваш маршрут...' +
+            '✅ Выберите или введите адрес старта, при выборе кнопки "🌍  Мое расположение"' +
+            ' обратите внимание, что используется, тот адрес который вы указывали ранее,' +
+            ' в случае необходимости обновите свое местоположение в главном меню):',
+            reply_markup=ReplyKeyboardMarkup(keyboard6, resize_keyboard=True, one_time_keyboard=True)
         )
-        pass
+        return GET_ROUTE
 
     elif text == '🛩  Расписания':
         update.message.reply_text(
@@ -229,6 +233,58 @@ def need_adress(update, context):
     return static_photo(update, context)
 
 
+def get_route_from(update, context):
+    text = update.message.text
+    if text == '🌍  Мое расположение':
+        if context.user_data['location'] is not None:
+            text = context.user_data['location']
+        else:
+            update.message.reply_text('Вы не предоставляли собственного местоположения ❗')
+            text = '🔙  Вернуться назад'
+    if text == '🔙  Вернуться назад':
+        update.message.reply_text('Возвращаю вас в главное меню...',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard2))
+        return MAIN_MENU
+    else:
+        if 'from_adresses' in context.user_data.keys():
+            context.user_data['from_adresses'].append(text)
+        else:
+            context.user_data['from_adresses'] = [text]
+        update.message.reply_text(
+            '✅ Пришлите мне точку финиша планируемого Вами маршрута!')
+        return GET_ROUTE_TO
+
+
+def get_route_to(update, context):
+    text = update.message.text
+    if 'to_adresses' in context.user_data.keys():
+        context.user_data['to_adresses'].append(text)
+    else:
+        context.user_data['to_adresses'] = [text]
+    update.message.reply_text('✅ Выберите тип карты снимка:', reply_markup=inline_maps)
+
+
+def get_route_handler(update, context):
+    query = update.callback_query
+    context.user_data['need_maptype'] = query.data
+    point_from = ",".join([str(i) for i in get_coordinates(context.user_data["from_adresses"][-1])])
+    point_to = ",".join([str(i) for i in get_coordinates(context.user_data["to_adresses"][-1])])
+    point_from = point_from.split(',')
+    point_from = f"{point_from[1]},{point_from[0]}"
+    point_to = point_to.split(',')
+    point_to = f"{point_to[1]},{point_to[0]}"
+    waypoints = route_request(point_from, point_to)
+    print(waypoints)
+    static_api_request = f"http://static-maps.yandex.ru/1.x/?l={context.user_data['need_maptype']}&pl={waypoints}"
+    context.bot.edit_message_text(
+        chat_id=query.message.chat_id,
+        message_id=query.message.message_id,
+        text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
+        parse_mode='markdown',
+        reply_markup=inline_maps
+    )
+
+
 def weather(update, context):
     text = update.message.text
     if text == '🌤  Текущая погода':
@@ -323,8 +379,8 @@ def main():
 (
     ENTER_NAME, MAIN_MENU, ENTER_LOCATION, STATIC_PHOTO, NEED_ADRESS, GET_LL_ORGANIZATION,
     GET_INFO_ABOUT_COMPANY, GET_NUMBER_OF_COMPANIES, GET_ORGANIZATIONS, WEATHER_HANDLER,
-    TIMETABLE_HANDLER, GET_INFO_STATION
-) = range(12)
+    TIMETABLE_HANDLER, GET_INFO_STATION, GET_ROUTE, GET_ROUTE_TO
+) = range(14)
 
 Help = CommandHandler('help', help)
 Stop = CommandHandler('stop', stop)
@@ -345,7 +401,10 @@ conversation_handler = ConversationHandler(
         GET_ORGANIZATIONS: [MessageHandler(Filters.text, get_organizations, pass_user_data=True)],
         WEATHER_HANDLER: [MessageHandler(Filters.text, weather, pass_user_data=True)],
         TIMETABLE_HANDLER: [MessageHandler(Filters.text, timetable, pass_user_data=True)],
-        GET_INFO_STATION: [MessageHandler(Filters.text, get_info_station, pass_user_data=True)]
+        GET_INFO_STATION: [MessageHandler(Filters.text, get_info_station, pass_user_data=True)],
+        GET_ROUTE: [MessageHandler(Filters.text, get_route_from, pass_user_data=True)],
+        GET_ROUTE_TO: [MessageHandler(Filters.text, get_route_to, pass_user_data=True),
+                       CallbackQueryHandler(get_route_handler, pass_user_data=True)]
     },
     fallbacks=[Stop], allow_reentry=True
 )
