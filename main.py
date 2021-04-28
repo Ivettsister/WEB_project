@@ -21,6 +21,9 @@ logger.setLevel(logging.DEBUG)
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
+PORT = int(os.environ.get('PORT', 5000))
+TOKEN = os.getenv("TELEGRAMM_TOKEN")
+HEROKU_APP_NAME = "web-project-yl"
 
 info_about_bot = '❗ Этот бот, создан для помощи в ориентировании на местности.\nОн может' + \
                  ' предоставить карту по адресу запрошенного места, найти ближайшие организации' + \
@@ -432,7 +435,9 @@ def main():
     dp.add_handler(Stop)
     dp.add_handler(Help)
     dp.add_handler(conversation_handler)
-    updater.start_polling()
+    updater.start_webhook(listen="0.0.0.0",
+                          port=int(PORT),
+                          url_path=TOKEN, webhook_url=f"https://{HEROKU_APP_NAME}.herokuapp.com/{TOKEN}")
     updater.idle()
 
 
@@ -465,7 +470,7 @@ conversation_handler = ConversationHandler(
         GET_ROUTE: [MessageHandler(Filters.text, get_route_from, pass_user_data=True)],
         GET_ROUTE_TO: [MessageHandler(Filters.text, get_route_to, pass_user_data=True)],
         GET_ROUTE_HOW: [MessageHandler(Filters.text, get_route_how, pass_user_data=True),
-                       CallbackQueryHandler(get_route_handler, pass_user_data=True)]
+                        CallbackQueryHandler(get_route_handler, pass_user_data=True)]
     },
     fallbacks=[Stop], allow_reentry=True
 )
