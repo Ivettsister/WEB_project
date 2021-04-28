@@ -12,7 +12,6 @@ from timetable import nearest_stations_request, get_transport
 from planing_route import route_request
 from error_messanger import send_message
 
-
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -117,7 +116,7 @@ def main_menu(update, context):
         return TIMETABLE_HANDLER
 
     elif text == '🔙 Указать своё местоположение':
-        update.message.reply_text('Где вы сейчас находитесь?',
+        update.message.reply_text('Где вы сейчас находитесь (Введите точный адрес - (город, улица, дом))?',
                                   reply_markup=reply_keyboard)
         return ENTER_LOCATION
     return MAIN_MENU
@@ -191,8 +190,8 @@ def get_organizations(update, context):
                           context.user_data['number'])
     if answer is None:
         send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
-                                            'Для продолжения корректной работы программы перезапустите бота, '
-                                            'используя комманды /stop /start')
+                                                   'Для продолжения корректной работы программы перезапустите бота, '
+                                                   'используя комманды /stop /start')
         return MAIN_MENU
     if answer['size'] == 0:
         update.message.reply_text('Ничего не найдено ❗')
@@ -227,21 +226,21 @@ def get_photo_handler(update, context):
     ll, spn = get_ll_span(context.user_data['need_adresses'])
     if ll is None or spn is None:
         send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
-                                            'Для продолжения корректной работы программы перезапустите бота, '
-                                            'используя комманды /stop /start')
+                                                   'Для продолжения корректной работы программы перезапустите бота, '
+                                                   'используя комманды /stop /start')
         return MAIN_MENU
     static_api_request = f"http://static-maps.yandex.ru/1.x/?ll={ll}&spn={spn}&l={context.user_data['need_maptype']}"
     try:
         context.bot.edit_message_text(
-        chat_id=query.message.chat_id,
-        message_id=query.message.message_id,
-        text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
-        parse_mode='markdown',
-        reply_markup=inline_maps)
+            chat_id=query.message.chat_id,
+            message_id=query.message.message_id,
+            text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
+            parse_mode='markdown',
+            reply_markup=inline_maps)
     except:
         send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
-                     'Для продолжения корректной работы программы перезапустите бота, '
-                     'используя комманды /stop /start')
+                                                   'Для продолжения корректной работы программы перезапустите бота, '
+                                                   'используя комманды /stop /start')
         return MAIN_MENU
 
 
@@ -283,7 +282,25 @@ def get_route_to(update, context):
         context.user_data['to_adresses'].append(text)
     else:
         context.user_data['to_adresses'] = [text]
-    update.message.reply_text('✅ Выберите тип карты снимка:', reply_markup=inline_maps)
+    update.message.reply_text('✅ Выберите, как Вы планируете добираться до места назначения:',
+                              reply_markup=ReplyKeyboardMarkup(keyboard5))
+    return GET_ROUTE_HOW
+
+
+def get_route_how(update, context):
+    text = update.message.text
+    if text == '🧍 Пешком':
+        context.user_data['way_how'] = 'walking'
+    elif text == '🚎 На общественном транспорте':
+        context.user_data['way_how'] = 'transit'
+    elif text == '🚘 На машине':
+        context.user_data['way_how'] = 'driving'
+    else:
+        update.message.reply_text('✅ Возвращаю вас к выбору места назначения:',
+                                  reply_markup=ReplyKeyboardMarkup(keyboard_back))
+        return GET_ROUTE_TO
+    update.message.reply_text('✅ Ваши данные записаны, выберите тип карты маршрута:',
+                              reply_markup=inline_maps)
 
 
 def get_route_handler(update, context):
@@ -295,24 +312,24 @@ def get_route_handler(update, context):
     point_from = f"{point_from[1]},{point_from[0]}"
     point_to = point_to.split(',')
     point_to = f"{point_to[1]},{point_to[0]}"
-    waypoints = route_request(point_from, point_to)
+    waypoints = route_request(point_from, point_to, context.user_data['way_how'])
     if waypoints is None:
         send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
-                                            'Для продолжения корректной работы программы перезапустите бота, '
-                                            'используя комманды /stop /start')
+                                                   'Для продолжения корректной работы программы перезапустите бота, '
+                                                   'используя комманды /stop /start')
         return MAIN_MENU
     static_api_request = f"http://static-maps.yandex.ru/1.x/?l={context.user_data['need_maptype']}&pl={waypoints}"
     try:
         context.bot.edit_message_text(
-        chat_id=query.message.chat_id,
-        message_id=query.message.message_id,
-        text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
-        parse_mode='markdown',
-        reply_markup=inline_maps)
+            chat_id=query.message.chat_id,
+            message_id=query.message.message_id,
+            text="[​​​​​​​​​​​]{}".format(static_api_request, '💡 Нашёл:'),
+            parse_mode='markdown',
+            reply_markup=inline_maps)
     except:
         send_message(context.user_data['chat_id'], 'Во время исполнения программы произошла ошибка.\n'
-                     'Для продолжения корректной работы программы перезапустите бота, '
-                     'используя комманды /stop /start')
+                                                   'Для продолжения корректной работы программы перезапустите бота, '
+                                                   'используя комманды /stop /start')
         return MAIN_MENU
 
 
@@ -422,8 +439,8 @@ def main():
 (
     ENTER_NAME, MAIN_MENU, ENTER_LOCATION, STATIC_PHOTO, NEED_ADRESS, GET_LL_ORGANIZATION,
     GET_INFO_ABOUT_COMPANY, GET_NUMBER_OF_COMPANIES, GET_ORGANIZATIONS, WEATHER_HANDLER,
-    TIMETABLE_HANDLER, GET_INFO_STATION, GET_ROUTE, GET_ROUTE_TO
-) = range(14)
+    TIMETABLE_HANDLER, GET_INFO_STATION, GET_ROUTE, GET_ROUTE_TO, GET_ROUTE_HOW
+) = range(15)
 
 Help = CommandHandler('help', help)
 Stop = CommandHandler('stop', stop)
@@ -446,7 +463,8 @@ conversation_handler = ConversationHandler(
         TIMETABLE_HANDLER: [MessageHandler(Filters.text, timetable, pass_user_data=True)],
         GET_INFO_STATION: [MessageHandler(Filters.text, get_info_station, pass_user_data=True)],
         GET_ROUTE: [MessageHandler(Filters.text, get_route_from, pass_user_data=True)],
-        GET_ROUTE_TO: [MessageHandler(Filters.text, get_route_to, pass_user_data=True),
+        GET_ROUTE_TO: [MessageHandler(Filters.text, get_route_to, pass_user_data=True)],
+        GET_ROUTE_HOW: [MessageHandler(Filters.text, get_route_how, pass_user_data=True),
                        CallbackQueryHandler(get_route_handler, pass_user_data=True)]
     },
     fallbacks=[Stop], allow_reentry=True
