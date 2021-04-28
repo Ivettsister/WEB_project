@@ -1,6 +1,5 @@
 import os
 import logging
-from dotenv import load_dotenv
 from telegram.ext import Updater, CommandHandler, ConversationHandler, MessageHandler, Filters, CallbackQueryHandler
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove
 from maps_api.geocoder import get_ll_span, get_city, get_country_code, get_coordinates
@@ -19,8 +18,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-load_dotenv(dotenv_path)
 PORT = int(os.environ.get('PORT', 5000))
 TOKEN = os.getenv("TELEGRAMM_TOKEN")
 HEROKU_APP_NAME = "web-project-yl"
