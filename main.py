@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 PORT = int(os.environ.get('PORT', 5000))
-TOKEN = os.getenv("TELEGRAMM_TOKEN")
+TOKEN = os.environ.get("TELEGRAMM_TOKEN")
 HEROKU_APP_NAME = "web-project-yl"
 
 info_about_bot = '❗ Этот бот, создан для помощи в ориентировании на местности.\nОн может' + \
@@ -427,13 +427,13 @@ def help(update, context):
 
 
 def main():
-    updater = Updater(os.getenv("TELEGRAMM_TOKEN"), use_context=True)
+    updater = Updater(TOKEN, use_context=True)
     dp = updater.dispatcher
     dp.add_handler(Stop)
     dp.add_handler(Help)
     dp.add_handler(conversation_handler)
     updater.start_webhook(listen="0.0.0.0",
-                          port=int(PORT),
+                          port=PORT,
                           url_path=TOKEN, webhook_url=f"https://{HEROKU_APP_NAME}.herokuapp.com/{TOKEN}")
     updater.idle()
 
