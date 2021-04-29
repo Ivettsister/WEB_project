@@ -21,7 +21,10 @@ logger.setLevel(logging.DEBUG)
 PORT = int(os.environ.get('PORT', 5000))
 TOKEN = os.environ.get("TELEGRAMM_TOKEN")
 logger.error("TOKEN"+TOKEN)
-logger.error("WEATHER_TOKEN"+ os.environ.get("WEATHER_TOKEN"))
+logger.error("WEATHER_TOKEN"+os.environ.get("WEATHER_TOKEN"))
+logger.error("ORGANIZATION_TOKEN"+os.environ.get("ORGANIZATION_TOKEN"))
+logger.error("TIMETABLE_TOKEN"+os.environ.get("TIMETABLE_TOKEN"))
+logger.error("ROUTE_TOKEN"+os.environ.get("ROUTE_TOKEN"))
 
 HEROKU_APP_NAME = "web-project-yl"
 
