@@ -20,6 +20,8 @@ logger.setLevel(logging.DEBUG)
 
 PORT = int(os.environ.get('PORT', 5000))
 TOKEN = os.getenv("TELEGRAMM_TOKEN")
+logger.error("TOKEN"+TOKEN)
+logger.error("WEATHER_TOKEN" + os.environ.get("WEATHER_TOKEN"))
 HEROKU_APP_NAME = "web-project-yl"
 
 info_about_bot = '❗ Этот бот, создан для помощи в ориентировании на местности.\nОн может' + \
